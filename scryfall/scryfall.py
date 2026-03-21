@@ -63,7 +63,7 @@ def save_dataframe(df, filename):
         with open(filepath, 'wb') as f:
             pickle.dump(df, f)
     except Exception as e:
-        logger.error(f"Error saving DataFrame: {e}")
+        logger.error("Error saving DataFrame", exc_info=True, extra={'error': e})
         return False
 
     return True
@@ -80,6 +80,7 @@ def get_cards_df():
         logger.info("Data is already up to date.")
         return pickle.load(open(os.path.join('data', filename), 'rb'))
 
+    logger.info("Cards data is old, fetching latest bulk data UUID...")
     uuid = fetch_latest_bulk_data_uuid()
     if not uuid:
         logger.error("Could not find bulk data UUID.")
