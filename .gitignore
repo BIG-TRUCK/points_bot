@@ -1,0 +1,14 @@
+/temp
+/data
+*/__pycache__/
+
+*.txt
+*.log
+*.csv
+*.pickle
+*.pkl
+*.ipynb
+.*
+/.godot/
+!/.gitignore
+!/.gitattributes
