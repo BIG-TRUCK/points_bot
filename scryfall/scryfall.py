@@ -93,5 +93,8 @@ def get_cards_df():
         logger.error("Failed to save data.")
     return df
 
+def build_tagger_url(oracle_id):
+    return f"https://tagger.scryfall.com/search?q={oracle_id}&mode=oracle"
+
 if __name__ == "__main__":
     get_cards_df()
