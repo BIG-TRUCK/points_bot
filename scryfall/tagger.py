@@ -1,9 +1,13 @@
 from bs4 import BeautifulSoup
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
-def build_tagger_url(oracle_id):
-    return f"https://tagger.scryfall.com/search?q={oracle_id}&mode=oracle"
+def build_tagger_url(set, collector_number):
+    return f"https://tagger.scryfall.com/card/{set}/{collector_number}"
 
 
 def scrape_tagger_page(html_content):
@@ -39,10 +43,25 @@ def scrape_tagger_page(html_content):
     return {'card_tags': card_tags, 'ancestors': ancestors}
 
 
-def get_tagger_data(oracle_id):
-    url = build_tagger_url(oracle_id)
-    response = requests.get(url)
-    response.raise_for_status()
-    html_content = response.text
-    return scrape_tagger_page(html_content)
+def get_tagger_data(set, collector_number):
+    url = build_tagger_url(set, collector_number)
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--window-size=1920,1080')
+
+    driver = webdriver.Chrome(options=options)
+    try:
+        driver.get(url)
+        # Wait for the page to load fully, e.g., wait for tagging content to appear
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.taggings'))
+        )
+        html_content = driver.page_source
+    finally:
+        driver.quit()
+
+    return scrape_tagger_page(html_content), html_content
 
