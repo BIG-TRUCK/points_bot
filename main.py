@@ -1,7 +1,8 @@
 import logging_config
 logging_config.setup_logging()
 
-import scryfall
+import api.scryfall as scryfall
+import api.edhrec as edhrec
 from typing import Optional
 import pandas as pd
 
