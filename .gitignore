@@ -1,6 +1,6 @@
-/temp
+temp/
 /data
-*/__pycache__/
+__pycache__/
 
 *.txt
 *.log
