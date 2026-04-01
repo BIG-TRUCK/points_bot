@@ -154,11 +154,9 @@ def scrape_all() -> None:
             deck_id = deck_url.split("d=")[-1].split("&")[0]
 
             mtgo_url = get_mtgo_download_url(deck_url)
-            time.sleep(REQUEST_DELAY)
 
             if mtgo_url:
                 _download_decklist(mtgo_url, deck_id)
-                time.sleep(REQUEST_DELAY)
             else:
                 logger.warning(f"No MTGO link found for deck {deck_id} ({deck_url})")
 
@@ -171,8 +169,7 @@ def scrape_all() -> None:
             )
 
         page += 1
-        if current_url:
-            time.sleep(1)
+        time.sleep(REQUEST_DELAY)
 
 
 if __name__ == "__main__":
