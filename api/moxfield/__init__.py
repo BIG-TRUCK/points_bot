@@ -1,0 +1,1 @@
+from .decklist import download_decklist
