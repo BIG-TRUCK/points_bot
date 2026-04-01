@@ -1,9 +1,12 @@
+import json
 import logging
 import os
+import re
 import time
+from typing import Optional
+
 import requests
 from bs4 import BeautifulSoup
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +33,61 @@ def _get(url: str) -> Optional[requests.Response]:
         return None
 
 
-def get_deck_links(soup: BeautifulSoup) -> list[str]:
-    """Extracts unique deck page URLs from a search results page."""
-    seen = set()
-    links = []
+def _parse_placement(text: str) -> Optional[int]:
+    """Returns the best (lowest) rank from a string like '1', '3-4', or '5-8'."""
+    match = re.match(r"(\d+)", text.strip())
+    return int(match.group(1)) if match else None
+
+
+def _parse_date(text: str) -> Optional[str]:
+    """Parses a DD/MM/YY date string and returns 'MM/YYYY'."""
+    match = re.search(r"(\d{1,2})/(\d{1,2})/(\d{2,4})", text)
+    if not match:
+        return None
+    _, month, year = match.groups()
+    year = f"20{year}" if len(year) == 2 else year
+    return f"{int(month):02d}/{year}"
+
+
+def get_deck_results(soup: BeautifulSoup) -> list[dict]:
+    """Parses search results rows into dicts with url, name, placement, date, and level."""
+    results = []
+    seen: set[str] = set()
+
     for a in soup.find_all("a", href=True):
         href = str(a["href"])
-        if "event?" in href and "d=" in href:
-            url = href if href.startswith("http") else f"{BASE_URL}/{href}"
-            if url not in seen:
-                seen.add(url)
-                links.append(url)
-    return links
+        if "event?" not in href or "d=" not in href:
+            continue
+        url = href if href.startswith("http") else f"{BASE_URL}/{href}"
+        if url in seen:
+            continue
+        seen.add(url)
+
+        name = a.get_text(strip=True)
+        tr = a.find_parent("tr")
+        if not tr:
+            results.append({"url": url, "name": name, "placement": None, "date": None, "level": None})
+            continue
+
+        placement: Optional[int] = None
+        date: Optional[str] = None
+        level: Optional[int] = None
+
+        for td in tr.find_all("td"):
+            td_text = td.get_text(strip=True)
+
+            if placement is None and re.fullmatch(r"\d+(-\d+)?", td_text):
+                placement = _parse_placement(td_text)
+            elif date is None and re.search(r"\d{1,2}/\d{1,2}/\d{2,4}", td_text):
+                date = _parse_date(td_text)
+
+            stars = [img for img in td.find_all("img") if "star.png" in str(img.get("src", ""))]
+            if stars:
+                level = len(stars)
+
+        results.append({"url": url, "name": name, "placement": placement, "date": date, "level": level})
+
+    return results
 
 
 def get_next_page_url(soup: BeautifulSoup) -> Optional[str]:
@@ -66,7 +112,14 @@ def get_mtgo_download_url(deck_url: str) -> Optional[str]:
     return None
 
 
-def download_decklist(url: str, deck_id: str) -> bool:
+def _save_metadata(deck_id: str, name: str, placement: Optional[int], date: Optional[str], level: Optional[int]) -> None:
+    """Writes deck metadata to data/CHL/<deck_id>.json."""
+    filepath = os.path.join(OUTPUT_DIR, f"{deck_id}.json")
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump({"name": name, "placement": placement, "date": date, "level": level}, f, indent=2)
+
+
+def _download_decklist(url: str, deck_id: str) -> bool:
     """Downloads a decklist .txt file into data/CHL/<deck_id>.txt."""
     filepath = os.path.join(OUTPUT_DIR, f"{deck_id}.txt")
     if os.path.exists(filepath):
@@ -82,7 +135,12 @@ def download_decklist(url: str, deck_id: str) -> bool:
 
 
 def scrape_all() -> None:
-    """Scrapes all CHL tournament decklists from mtgtop8 and saves MTGO .txt files to data/CHL/."""
+    """Scrapes all CHL tournament decklists from mtgtop8.
+
+    For each result, saves:
+      - data/CHL/<deck_id>.txt  — the MTGO decklist
+      - data/CHL/<deck_id>.json — metadata (name, placement, date, level)
+    """
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     current_url: Optional[str] = SEARCH_URL
@@ -95,19 +153,29 @@ def scrape_all() -> None:
             break
 
         soup = BeautifulSoup(response.text, "html.parser")
-        deck_links = get_deck_links(soup)
-        logger.info(f"Found {len(deck_links)} deck(s) on page {page}")
+        deck_results = get_deck_results(soup)
+        logger.info(f"Found {len(deck_results)} deck(s) on page {page}")
 
-        for deck_url in deck_links:
+        for result in deck_results:
+            deck_url = result["url"]
             deck_id = deck_url.split("d=")[-1].split("&")[0]
+
             mtgo_url = get_mtgo_download_url(deck_url)
             time.sleep(REQUEST_DELAY)
 
             if mtgo_url:
-                download_decklist(mtgo_url, deck_id)
+                _download_decklist(mtgo_url, deck_id)
                 time.sleep(REQUEST_DELAY)
             else:
                 logger.warning(f"No MTGO link found for deck {deck_id} ({deck_url})")
+
+            _save_metadata(
+                deck_id,
+                name=result["name"],
+                placement=result["placement"],
+                date=result["date"],
+                level=result["level"],
+            )
 
         current_url = get_next_page_url(soup)
         page += 1
