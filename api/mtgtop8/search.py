@@ -89,16 +89,6 @@ def get_deck_results(soup: BeautifulSoup) -> list[dict]:
 
     return results
 
-
-def get_next_page_url(soup: BeautifulSoup) -> Optional[str]:
-    """Returns the URL of the next search results page, or None if on the last page."""
-    for a in soup.find_all("a", href=True):
-        if "next" in a.get_text(strip=True).lower():
-            href = str(a["href"])
-            return href if href.startswith("http") else f"{BASE_URL}/{href}"
-    return None
-
-
 def get_mtgo_download_url(deck_url: str) -> Optional[str]:
     """Fetches a deck page and returns the MTGO .txt download URL."""
     response = _get(deck_url)
@@ -143,18 +133,21 @@ def scrape_all() -> None:
     """
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    current_url: Optional[str] = SEARCH_URL
     page = 1
 
-    while current_url:
-        logger.info(f"Fetching search results page {page}: {current_url}")
-        response = _get(current_url)
+    while True:
+        url = SEARCH_URL + f"&current_page={page}"
+        logger.info(f"Fetching search results page {page}: {url}")
+        response = _get(url)
         if not response:
             break
 
         soup = BeautifulSoup(response.text, "html.parser")
         deck_results = get_deck_results(soup)
         logger.info(f"Found {len(deck_results)} deck(s) on page {page}")
+
+        if not deck_results:
+            break
 
         for result in deck_results:
             deck_url = result["url"]
@@ -177,7 +170,6 @@ def scrape_all() -> None:
                 level=result["level"],
             )
 
-        current_url = get_next_page_url(soup)
         page += 1
         if current_url:
             time.sleep(1)
