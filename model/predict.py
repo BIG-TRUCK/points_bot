@@ -1,11 +1,15 @@
-"""Run inference on unlabeled cards to produce a ranked candidate list.
+"""Run two-stage inference to produce a ranked suspect list.
+
+Stage 1 — Classifier: assigns a probability that each unlabeled card should
+           be pointed at all. This drives the ranking.
+Stage 2 — Regressor:  estimates how many points, shown as context only.
 
 Usage:
     python -m model.predict                     # loads latest per_card pkl + saved model
     python -m model.predict data/my_data.pkl    # explicit data path
 
 Outputs:
-    data/chl_predictions.csv  — all unlabeled cards ranked by predicted points desc
+    data/chl_predictions.csv  — all unlabeled cards ranked by pointed_prob desc
 """
 
 import logging
@@ -16,6 +20,7 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 from model.features import build_feature_matrix
 from model.feedback import review_predictions
@@ -59,35 +64,45 @@ def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> 
     with open(MODEL_PATH, "rb") as f:
         artifact = pickle.load(f)
 
-    model = artifact["model"]
+    clf = artifact["classifier"]
+    scaler: StandardScaler | None = artifact.get("classifier_scaler")
+    reg = artifact["regressor"]
     feature_cols = artifact["feature_columns"]
 
     X = build_feature_matrix(unlabeled)
 
     # Align columns in case feature set has drifted
-    missing = set(feature_cols) - set(X.columns)
-    for col in missing:
+    for col in set(feature_cols) - set(X.columns):
         X[col] = 0.0
     X = X[feature_cols]
 
-    raw_preds = model.predict(X)
-    snapped = [_snap_to_valid(p) for p in raw_preds]
+    # Stage 1 — classifier probabilities
+    if scaler is not None:
+        X_clf = scaler.transform(X)
+        pointed_probs = clf.predict_proba(X_clf)[:, 1]
+    else:
+        pointed_probs = clf.predict_proba(X)[:, 1]
+
+    # Stage 2 — point estimate (context only, not used for ranking)
+    raw_reg = reg.predict(X)
+    snapped = [_snap_to_valid(p) for p in raw_reg]
 
     results = pd.DataFrame({
-        "card_name": unlabeled["card_name"].values,
-        "predicted_points_raw": raw_preds,
-        "predicted_points": snapped,
-        "appearances": unlabeled["appearances"].values,
-        "avg_placement": unlabeled["avg_placement"].values,
-        "top4_rate": unlabeled["top4_rate"].values,
-        "avg_level": unlabeled["avg_level"].values,
-    }).sort_values("predicted_points_raw", ascending=False).reset_index(drop=True)
+        "card_name":       unlabeled["card_name"].values,
+        "pointed_prob":    np.round(pointed_probs * 100, 1),
+        "est_points":      snapped,
+        "appearances":     unlabeled["appearances"].values,
+        "avg_placement":   unlabeled["avg_placement"].values,
+        "top4_rate":       unlabeled["top4_rate"].values,
+        "avg_level":       unlabeled["avg_level"].values,
+        "_reg_raw":        raw_reg,
+    }).sort_values("pointed_prob", ascending=False).reset_index(drop=True)
 
     results.to_csv(OUTPUT_PATH, index=False)
     logger.info(f"Predictions saved to {OUTPUT_PATH}")
 
-    print(f"\n--- Top {top_n} candidate cards for points ---")
-    print(results.head(top_n).to_string(index=False))
+    print(f"\n--- Top {top_n} suspects ---")
+    print(results.drop(columns="_reg_raw").head(top_n).to_string(index=False))
 
     if review:
         review_predictions(results, top_n=top_n)

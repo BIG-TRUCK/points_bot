@@ -93,8 +93,9 @@ def review_predictions(
 
     for _, row in candidates.iterrows():
         name = row["card_name"]
-        pred = row["predicted_points"]
-        raw = row["predicted_points_raw"]
+        pointed_prob = row["pointed_prob"]
+        pred = row["est_points"]
+        raw = row.get("_reg_raw", pred)
 
         # Oracle context
         if name in oracle.index:
@@ -125,7 +126,7 @@ def review_predictions(
                     line = f"{line} {word}".strip()
             if line:
                 print(f"    {line}")
-        print(f"  pred={pred} (raw={raw:.2f})  apps={int(row['appearances'])}  top4={row['top4_rate']:.0%}")
+        print(f"  suspect={pointed_prob:.1f}%  est={pred}pts (raw={raw:.2f})  apps={int(row['appearances'])}  top4={row['top4_rate']:.0%}")
 
         while True:
             raw_input = input("    Your points (Enter=skip, q=quit): ").strip().lower()
@@ -140,10 +141,10 @@ def review_predictions(
                 if value not in VALID_POINTS:
                     print(f"    Invalid value. Choose from {sorted(VALID_POINTS)}.")
                     continue
-                entry: dict = {"points": value, "predicted": int(pred)}
+                entry: dict = {"points": value, "est_points": int(pred), "pointed_prob": round(float(pointed_prob), 1)}
                 discrepancy = abs(value - pred)
                 if discrepancy >= min_discrepancy:
-                    print(f"    ** Notable discrepancy: your={value} vs pred={pred} (diff={discrepancy}) — recorded.")
+                    print(f"    ** Notable discrepancy: your={value} vs est={pred} (diff={discrepancy}) — recorded.")
                 else:
                     print(f"    Recorded.")
                 feedback[name] = entry
