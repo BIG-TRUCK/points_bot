@@ -92,25 +92,6 @@
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
-  .viz-root .story-intro { margin: 4px 0 8px; }
-  .viz-root .story-intro p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; }
-  .viz-root .story-note {
-    background: var(--series-1-track);
-    border-left: 3px solid var(--series-1);
-    border-radius: 0 8px 8px 0;
-    padding: 10px 16px;
-    margin: 4px 0 28px;
-  }
-  .viz-root .story-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--series-1);
-    margin-bottom: 4px;
-  }
-  .viz-root .story-note p { margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
 </style>
 <style>
   body { margin: 0; background: var(--surface-page, #f9f9f7); }
@@ -121,21 +102,8 @@
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 08:03 UTC.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 13:31 UTC.</p>
   
-  <section class="story-intro">
-    <h2 style="margin-top:0; border-top:none; padding-top:0;">Why this exists</h2>
-    <p>
-      This started from a simple question: could a model, trained on real CHL tournament
-      results, help spot which currently-unpointed cards are quietly overperforming enough
-      to deserve a point value — and roughly how many? Rather than commit to one algorithm
-      upfront, the approach here has been to run several very different model families
-      side-by-side — gradient-boosted trees, linear/ordinal models, and a kernel method —
-      and let leave-one-out cross-validation pick a winner for each stage, every time the
-      pipeline runs.
-    </p>
-  </section>
-
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
     <p>
@@ -158,8 +126,6 @@
       </div>
     </div>
   </section>
-
-  <div class="story-note"><span class="story-label">Dev note</span><p>The model started with structured card attributes only — mana cost, color identity, rarity, tournament placement stats. SVM and a TF-IDF vectorization of oracle text were added later, once it became clear a card&#x27;s actual rules text carries real signal that CMC and color identity alone don&#x27;t capture. Hyperparameters for every candidate now come from a small random search too — early runs used one hand-picked config per model type, which was leaving real performance on the table (see the params listed under each candidate above).</p></div>
 
   <h2>Classifier performance — XGBoost</h2>
   <div class="stat-grid">
@@ -194,8 +160,6 @@
   </div>
   <p class="muted">Positives (pointed cards) use LOOCV-held-out probabilities; negatives (unpointed cards) use in-sample probabilities from the final model, since full LOOCV over the unpointed cards wasn&#x27;t run given the class imbalance. Treat these as a mildly optimistic upper bound, not a strict held-out estimate. AUPRC is the headline ranking metric — AUROC is included for reference but reads misleadingly high under ~40:1,584 class imbalance.</p>
 
-  <div class="story-note"><span class="story-label">Dev note</span><p>Early evaluation runs looked deceptively strong until it became obvious why: with only ~40 pointed cards against ~1,600 unpointed ones, a classifier can get 97%+ &#x27;accuracy&#x27; just by never predicting &#x27;pointed&#x27; at all. That&#x27;s what pushed the metric here toward AUPRC and a searched decision threshold, instead of accuracy or a fixed 0.5 cutoff.</p></div>
-
   <h2>Regressor performance — OrdinalRidge</h2>
   <div class="stat-grid">
     
@@ -213,8 +177,6 @@
       
     </div>
   </div>
-
-  <div class="story-note"><span class="story-label">Dev note</span><p>Point values aren&#x27;t a free-floating number — they&#x27;re drawn from a small ordered set (0, 1, 2, 3, 5, 7, 8). OrdinalRidge, which models that ordering directly instead of treating points like an arbitrary continuous target, was added specifically for that reason, and it&#x27;s not a coincidence it usually wins this stage.</p></div>
 
   <h2>Feature importance (mean |SHAP|) — classifier</h2>
   <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact.</p>
@@ -855,8 +817,6 @@
         </div></div>
       </div></div>
 
-  <div class="story-note"><span class="story-label">Dev note</span><p>SHAP is computed for every candidate, not just the winner — partly as a sanity check. If a model&#x27;s top features look like real Magic reasoning (appearances, tags, mana cost) rather than noise or a data-collection artifact, that&#x27;s a better sign than a good LOOCV score on its own.</p></div>
-
   <h2>Top 15 suspects</h2>
   <p class="muted">Unlabeled cards ranked by the classifier's estimated pointed-probability.</p>
   <table>
@@ -994,8 +954,6 @@
         </tr>
     </tbody>
   </table>
-
-  <div class="story-note"><span class="story-label">Dev note</span><p>This list is the actual point of the project, not a leaderboard — a shortlist for a human to sanity-check rather than a verdict. &#x27;Pointed&#x27; here is itself a human judgment call by format organizers, not an objective label, so the companion app&#x27;s feedback form feeds corrections back in as GitHub Issues to fold into the next training run.</p></div>
 
   <footer>
     Generated by <code>scripts/build_report.py</code> from <code>data/chl_model.pkl</code> and

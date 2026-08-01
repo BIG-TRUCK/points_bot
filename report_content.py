@@ -105,25 +105,6 @@ REPORT_CSS = """<style>
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
-  .viz-root .story-intro { margin: 4px 0 8px; }
-  .viz-root .story-intro p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; }
-  .viz-root .story-note {
-    background: var(--series-1-track);
-    border-left: 3px solid var(--series-1);
-    border-radius: 0 8px 8px 0;
-    padding: 10px 16px;
-    margin: 4px 0 28px;
-  }
-  .viz-root .story-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--series-1);
-    margin-bottom: 4px;
-  }
-  .viz-root .story-note p { margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
 </style>"""
 
 
@@ -187,10 +168,6 @@ def _suspects_table_html(df: pd.DataFrame, top_n: int) -> str:
 
 def _format_params(params: dict) -> str:
     return ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
-
-
-def _story_note(text: str) -> str:
-    return f'<div class="story-note"><span class="story-label">Dev note</span><p>{_esc(text)}</p></div>'
 
 
 def _stat_tile(label: str, value: str, note: str = "", subs: "Optional[list[tuple[str, str]]]" = None) -> str:
@@ -263,19 +240,6 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     shap_reg_html = _shap_section_html(artifact.get("shap_importance_reg"), best_reg_name, "regressor")
 
     return f"""
-  <section class="story-intro">
-    <h2 style="margin-top:0; border-top:none; padding-top:0;">Why this exists</h2>
-    <p>
-      This started from a simple question: could a model, trained on real CHL tournament
-      results, help spot which currently-unpointed cards are quietly overperforming enough
-      to deserve a point value — and roughly how many? Rather than commit to one algorithm
-      upfront, the approach here has been to run several very different model families
-      side-by-side — gradient-boosted trees, linear/ordinal models, and a kernel method —
-      and let leave-one-out cross-validation pick a winner for each stage, every time the
-      pipeline runs.
-    </p>
-  </section>
-
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
     <p>
@@ -299,16 +263,6 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     </div>
   </section>
 
-  {_story_note(
-      "The model started with structured card attributes only — mana cost, color identity, "
-      "rarity, tournament placement stats. SVM and a TF-IDF vectorization of oracle text were "
-      "added later, once it became clear a card's actual rules text carries real signal that "
-      "CMC and color identity alone don't capture. Hyperparameters for every candidate now come "
-      "from a small random search too — early runs used one hand-picked config per model type, "
-      "which was leaving real performance on the table (see the params listed under each "
-      "candidate above)."
-  )}
-
   <h2>Classifier performance — {_esc(best_clf_name)}</h2>
   <div class="stat-grid">
     {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}", "headline metric — robust to the ~40:1,584 class imbalance")}
@@ -325,25 +279,11 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
 
-  {_story_note(
-      "Early evaluation runs looked deceptively strong until it became obvious why: with only "
-      "~40 pointed cards against ~1,600 unpointed ones, a classifier can get 97%+ 'accuracy' "
-      "just by never predicting 'pointed' at all. That's what pushed the metric here toward "
-      "AUPRC and a searched decision threshold, instead of accuracy or a fixed 0.5 cutoff."
-  )}
-
   <h2>Regressor performance — {_esc(best_reg_name)}</h2>
   <div class="stat-grid">
     {_stat_tile("MAE (points)", f"{reg_mae:.3f}" if reg_mae is not None else "—")}
     {_stat_tile("Naive baseline MAE", f"{naive_mae:.3f}" if naive_mae is not None else "—", "always predicting the mode")}
   </div>
-
-  {_story_note(
-      "Point values aren't a free-floating number — they're drawn from a small ordered set "
-      "(0, 1, 2, 3, 5, 7, 8). OrdinalRidge, which models that ordering directly instead of "
-      "treating points like an arbitrary continuous target, was added specifically for that "
-      "reason, and it's not a coincidence it usually wins this stage."
-  )}
 
   <h2>Feature importance (mean |SHAP|) — classifier</h2>
   <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact.</p>
@@ -351,13 +291,6 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
 
   <h2>Feature importance (mean |SHAP|) — regressor</h2>
   {shap_reg_html}
-
-  {_story_note(
-      "SHAP is computed for every candidate, not just the winner — partly as a sanity check. "
-      "If a model's top features look like real Magic reasoning (appearances, tags, mana cost) "
-      "rather than noise or a data-collection artifact, that's a better sign than a good LOOCV "
-      "score on its own."
-  )}
 
   <h2>Top {TOP_N_SUSPECTS} suspects</h2>
   <p class="muted">Unlabeled cards ranked by the classifier's estimated pointed-probability.</p>
@@ -376,11 +309,4 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
       {_suspects_table_html(predictions, TOP_N_SUSPECTS)}
     </tbody>
   </table>
-
-  {_story_note(
-      "This list is the actual point of the project, not a leaderboard — a shortlist for a "
-      "human to sanity-check rather than a verdict. 'Pointed' here is itself a human judgment "
-      "call by format organizers, not an objective label, so the companion app's feedback form "
-      "feeds corrections back in as GitHub Issues to fold into the next training run."
-  )}
 """
