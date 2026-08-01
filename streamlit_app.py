@@ -1,11 +1,15 @@
 """Streamlit companion app for the CHL points bot.
 
-Two tabs:
-  - Top Suspects: browse the model's ranked unlabeled-card predictions and
-    submit your own point-value rating (opens a GitHub Issue — see
-    github_feedback.py).
-  - Score a Card: type any card name and get a live rating, whether or not
-    it's ever been played in CHL.
+Three views, switched via the `view` URL query param so they can be linked
+to directly (`?view=score`, `?view=results`) rather than only reachable by
+clicking a tab:
+  - landing (default): the model report (same content as docs/index.html)
+    with "Try it out" / "See the results" buttons at the top.
+  - results (`?view=results`): browse the model's ranked unlabeled-card
+    predictions and submit a point-value rating (opens a GitHub Issue —
+    see github_feedback.py).
+  - score (`?view=score`): type any card name and get a live rating,
+    whether or not it's ever been played in CHL.
 
 Run locally:
     streamlit run streamlit_app.py
@@ -24,6 +28,7 @@ gitignored and too large to ship). Regenerate after every retrain with:
     python -m scripts.export_app_data
 """
 
+import pickle
 import urllib.parse
 
 import pandas as pd
@@ -31,6 +36,7 @@ import streamlit as st
 
 from github_feedback import feedback_configured, submit_feedback
 from model.predict import VALID_POINTS, score_card
+from report_content import REPORT_CSS, render_report_sections
 
 APP_DATA_DIR = "app_data"
 MODEL_PATH = f"{APP_DATA_DIR}/chl_model.pkl"
@@ -56,6 +62,12 @@ def load_predictions() -> pd.DataFrame:
 @st.cache_data
 def load_card_pool() -> pd.DataFrame:
     return pd.read_pickle(CARD_POOL_PATH)
+
+
+@st.cache_resource
+def load_model_artifact() -> dict:
+    with open(MODEL_PATH, "rb") as f:
+        return pickle.load(f)
 
 
 def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: str) -> None:
@@ -88,31 +100,19 @@ def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: 
                 st.error(msg)
 
 
-st.title("🎯 CHL Points Bot")
-st.caption("Community feedback tool for the 10-point Canadian Highlander (CHL) points model.")
+def back_link() -> None:
+    st.markdown('<a href="?view=landing">&larr; Back to overview</a>', unsafe_allow_html=True)
 
-try:
-    predictions_df = load_predictions()
-    card_pool_df = load_card_pool()
-except FileNotFoundError as e:
-    st.error(
-        f"Missing bundled data: {e}\n\n"
-        "Run `python -m scripts.export_app_data` after training and commit the "
-        "resulting app_data/ files."
-    )
-    st.stop()
 
-card_oracle = card_pool_df.set_index("card_name")
-
-tab_suspects, tab_lookup = st.tabs(["🔎 Top Suspects", "🃏 Score a Card"])
-
-with tab_suspects:
+def render_results(predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
+    back_link()
     st.subheader("Top suspects")
     st.write(
         "Unlabeled cards ranked by the model's estimated probability that they "
         "should be pointed. Tell us if you think the model's wrong."
     )
 
+    card_oracle = card_pool_df.set_index("card_name")
     max_n = min(100, len(predictions_df))
     top_n = st.slider("How many to show", min_value=5, max_value=max_n, value=min(20, max_n), step=5)
 
@@ -146,7 +146,9 @@ with tab_suspects:
                     key_prefix=f"suspect_{name}",
                 )
 
-with tab_lookup:
+
+def render_score(card_pool_df: pd.DataFrame) -> None:
+    back_link()
     st.subheader("Score any card")
     st.write(
         "Type a card name to get the model's live rating. Cards that have "
@@ -202,3 +204,47 @@ with tab_lookup:
                     pointed_prob=result["pointed_prob"],
                     key_prefix=f"lookup_{name}",
                 )
+
+
+def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
+    # Relative hrefs (?view=...) resolve against whatever domain the app is
+    # actually running on — localhost during dev, the real Streamlit Cloud
+    # URL once deployed — so these work correctly without hardcoding it.
+    sections_html = render_report_sections(artifact, predictions_df, card_pool_df)
+    st.markdown(
+        f"""{REPORT_CSS}
+<div class="viz-root">
+  <div class="cta-row">
+    <a class="cta-button primary" href="?view=score">🃏 Try it out</a>
+    <a class="cta-button secondary" href="?view=results">🔎 See the results</a>
+  </div>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary.</p>
+  {sections_html}
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+
+st.title("🎯 CHL Points Bot")
+st.caption("Community feedback tool for the 10-point Canadian Highlander (CHL) points model.")
+
+try:
+    predictions_df = load_predictions()
+    card_pool_df = load_card_pool()
+    model_artifact = load_model_artifact()
+except FileNotFoundError as e:
+    st.error(
+        f"Missing bundled data: {e}\n\n"
+        "Run `python -m scripts.export_app_data` after training and commit the "
+        "resulting app_data/ files."
+    )
+    st.stop()
+
+view = st.query_params.get("view", "landing")
+
+if view == "results":
+    render_results(predictions_df, card_pool_df)
+elif view == "score":
+    render_score(card_pool_df)
+else:
+    render_landing(model_artifact, predictions_df, card_pool_df)
