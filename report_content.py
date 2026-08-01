@@ -100,17 +100,18 @@ REPORT_CSS = """<style>
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
-  .viz-root .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 28px; }
-  .viz-root .cta-button {
+  .viz-root .tab-row { display: flex; gap: 4px; border-bottom: 1px solid var(--gridline); margin: 4px 0 28px; flex-wrap: wrap; }
+  .viz-root .tab-link {
     display: inline-block;
-    padding: 12px 22px;
-    border-radius: 8px;
+    padding: 10px 18px;
     font-weight: 600;
     text-decoration: none;
-    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
   }
-  .viz-root .cta-button.primary { background: var(--series-1); color: #ffffff; border-color: var(--series-1); }
-  .viz-root .cta-button.secondary { background: var(--surface-1); color: var(--text-primary); }
+  .viz-root .tab-link:hover { color: var(--text-primary); }
+  .viz-root .tab-link.active { color: var(--series-1); border-bottom-color: var(--series-1); }
 </style>"""
 
 

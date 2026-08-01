@@ -1,10 +1,9 @@
 """Streamlit companion app for the CHL points bot.
 
 Three views, switched via the `view` URL query param so they can be linked
-to directly (`?view=score`, `?view=results`) rather than only reachable by
-clicking a tab:
-  - landing (default): the model report (same content as docs/index.html)
-    with "Try it out" / "See the results" buttons at the top.
+to directly (`?view=score`, `?view=results`) as well as reachable by
+clicking a tab in the nav bar rendered at the top of every view:
+  - landing (default): the model report (same content as docs/index.html).
   - results (`?view=results`): browse the model's ranked unlabeled-card
     predictions and submit a point-value rating (opens a GitHub Issue —
     see github_feedback.py).
@@ -100,12 +99,31 @@ def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: 
                 st.error(msg)
 
 
-def back_link() -> None:
-    st.markdown('<a href="?view=landing">&larr; Back to overview</a>', unsafe_allow_html=True)
+NAV_TABS = [
+    ("landing", "Overview"),
+    ("score", "🃏 Try it out"),
+    ("results", "🔎 See the results"),
+]
+
+
+def _flatten_for_markdown(text: str) -> str:
+    # st.markdown runs unsafe_allow_html content through a CommonMark parser
+    # first, which reads any 4+-space-indented line as an indented code
+    # block — report_content.py's nested f-strings produce those freely.
+    return "\n".join(line.lstrip() for line in text.split("\n"))
+
+
+def nav_tabs(active: str) -> None:
+    links = "".join(
+        f'<a class="tab-link{" active" if key == active else ""}" href="?view={key}">{label}</a>'
+        for key, label in NAV_TABS
+    )
+    body = f'{REPORT_CSS}<div class="viz-root"><div class="tab-row">{links}</div></div>'
+    st.markdown(_flatten_for_markdown(body), unsafe_allow_html=True)
 
 
 def render_results(predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
-    back_link()
+    nav_tabs("results")
     st.subheader("Top suspects")
     st.write(
         "Unlabeled cards ranked by the model's estimated probability that they "
@@ -148,7 +166,7 @@ def render_results(predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> 
 
 
 def render_score(card_pool_df: pd.DataFrame) -> None:
-    back_link()
+    nav_tabs("score")
     st.subheader("Score any card")
     st.write(
         "Type a card name to get the model's live rating. Cards that have "
@@ -207,26 +225,17 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
 
 
 def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
+    nav_tabs("landing")
     # Relative hrefs (?view=...) resolve against whatever domain the app is
     # actually running on — localhost during dev, the real Streamlit Cloud
     # URL once deployed — so these work correctly without hardcoding it.
     sections_html = render_report_sections(artifact, predictions_df, card_pool_df)
     body = f"""{REPORT_CSS}
 <div class="viz-root">
-  <div class="cta-row">
-    <a class="cta-button primary" href="?view=score">🃏 Try it out</a>
-    <a class="cta-button secondary" href="?view=results">🔎 See the results</a>
-  </div>
   <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary.</p>
   {sections_html}
 </div>"""
-    # st.markdown runs content through a CommonMark parser before honoring
-    # unsafe_allow_html — any line indented 4+ spaces reads as an indented
-    # code block there, which report_content.py's nested f-strings produce
-    # freely (harmless in a plain .html file, but not here). Strip leading
-    # whitespace per line so nothing gets misread as code / silently dropped.
-    flat_body = "\n".join(line.lstrip() for line in body.split("\n"))
-    st.markdown(flat_body, unsafe_allow_html=True)
+    st.markdown(_flatten_for_markdown(body), unsafe_allow_html=True)
 
 
 st.title("🎯 CHL Points Bot")
