@@ -110,5 +110,41 @@ def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> 
     return results
 
 
+def lookup(card_name: str) -> dict | None:
+    """Returns pointed_prob and est_points for a single card by name.
+
+    Loads from the saved predictions CSV if available, otherwise runs full
+    inference first. Returns None if the card is not found (e.g. it is already
+    in the labeled/pointed set).
+
+    Args:
+        card_name: Exact card name as it appears in the dataset.
+
+    Returns:
+        dict with keys 'card_name', 'pointed_prob', 'est_points', or None.
+    """
+    if os.path.exists(OUTPUT_PATH):
+        results = pd.read_csv(OUTPUT_PATH)
+    else:
+        results = main(review=False)
+
+    match = results[results["card_name"].str.lower() == card_name.lower()]
+    if match.empty:
+        logger.warning(f"'{card_name}' not found in predictions (may already be labeled).")
+        return None
+
+    row = match.iloc[0]
+    result = {
+        "card_name":    row["card_name"],
+        "pointed_prob": round(float(row["pointed_prob"]), 1),
+        "est_points":   int(row["est_points"]),
+    }
+    print(f"  {result['card_name']}: {result['pointed_prob']}% likely to be pointed, est. {result['est_points']}pt")
+    return result
+
+
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else None)
+    if len(sys.argv) == 2 and not sys.argv[1].endswith(".pkl"):
+        lookup(sys.argv[1])
+    else:
+        main(sys.argv[1] if len(sys.argv) > 1 else None)
