@@ -23,6 +23,7 @@ import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC, SVR
 
 from model.features import build_feature_matrix
 from model.feedback import apply_feedback_to_df
@@ -49,6 +50,12 @@ def _load_per_card_df(path: str | None = None) -> pd.DataFrame:
 
 def _snap_to_valid(value: float) -> int:
     return min(VALID_POINTS, key=lambda v: abs(v - value))
+
+
+def _needs_scaling(model) -> bool:
+    """Distance/margin-based models (Logistic, SVM) need standardised input;
+    tree models and OrdinalRidge do not."""
+    return isinstance(model, (LogisticRegression, SVC, SVR))
 
 
 # ---------------------------------------------------------------------------
@@ -92,6 +99,10 @@ def _logistic_classifier() -> LogisticRegression:
     return LogisticRegression(C=0.1, max_iter=1000, random_state=42)
 
 
+def _svm_classifier() -> SVC:
+    return SVC(C=1.0, kernel="rbf", probability=True, random_state=42)
+
+
 # ---------------------------------------------------------------------------
 # Model factories — regressors
 # ---------------------------------------------------------------------------
@@ -130,6 +141,10 @@ def _ordinal_regressor() -> mord.OrdinalRidge:
     return mord.OrdinalRidge(alpha=1.0)
 
 
+def _svm_regressor() -> SVR:
+    return SVR(C=1.0, kernel="rbf")
+
+
 # ---------------------------------------------------------------------------
 # LOOCV — classifier
 # ---------------------------------------------------------------------------
@@ -162,7 +177,7 @@ def run_loocv_classifier(
         y_train = y_binary.copy()
         y_train.loc[idx] = 0  # temporarily treat as unpointed
         model = model_factory()
-        if isinstance(model, LogisticRegression):
+        if _needs_scaling(model):
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X_all)
             model.fit(X_scaled, y_train)
@@ -180,7 +195,7 @@ def run_loocv_classifier(
         y_train = y_binary.copy()
         y_train.loc[idx] = 0
         model = model_factory()
-        if isinstance(model, LogisticRegression):
+        if _needs_scaling(model):
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X_all)
             model.fit(X_scaled, y_train)
@@ -212,6 +227,10 @@ def run_loocv_regressor(X: pd.DataFrame, y: pd.Series, model_factory) -> dict:
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
         y_train = y.iloc[train_idx]
         model = model_factory()
+        if _needs_scaling(model):
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.transform(X_test)
         model.fit(X_train, y_train)
         preds_raw[test_idx] = model.predict(X_test)
 
@@ -267,7 +286,7 @@ def main(data_path: str | None = None) -> None:
     logger.info(f"Pointed cards (stage 2 training set): {len(pointed)}")
 
     # Build feature matrices
-    X_all = build_feature_matrix(df)
+    X_all, tfidf_vectorizer = build_feature_matrix(df)
     X_pointed = X_all.loc[pointed.index]
     y_binary = pd.Series(
         (df["points"].fillna(0) > 0).astype(int).values,
@@ -289,6 +308,7 @@ def main(data_path: str | None = None) -> None:
         ("LightGBM", lambda: _lgbm_classifier(spw)),
         ("XGBoost",  lambda: _xgb_classifier(spw)),
         ("Logistic", _logistic_classifier),
+        ("SVM",      _svm_classifier),
     ]
 
     clf_results = {}
@@ -309,7 +329,7 @@ def main(data_path: str | None = None) -> None:
     # Train final classifier
     best_clf_factory = dict(clf_candidates)[best_clf_name]
     final_clf = best_clf_factory()
-    if isinstance(final_clf, LogisticRegression):
+    if _needs_scaling(final_clf):
         scaler = StandardScaler()
         X_all_scaled = scaler.fit_transform(X_all)
         final_clf.fit(X_all_scaled, y_binary)
@@ -330,6 +350,7 @@ def main(data_path: str | None = None) -> None:
         ("LightGBM",     _lgbm_regressor),
         ("XGBoost",      _xgb_regressor),
         ("OrdinalRidge", _ordinal_regressor),
+        ("SVM",          _svm_regressor),
     ]
 
     reg_results = {}
@@ -355,10 +376,17 @@ def main(data_path: str | None = None) -> None:
     # Train final regressor
     best_reg_factory = dict(reg_candidates)[best_reg_name]
     final_reg = best_reg_factory()
-    final_reg.fit(X_pointed, y_points)
+    if _needs_scaling(final_reg):
+        reg_scaler = StandardScaler()
+        X_pointed_scaled = reg_scaler.fit_transform(X_pointed)
+        final_reg.fit(X_pointed_scaled, y_points)
+    else:
+        reg_scaler = None
+        final_reg.fit(X_pointed, y_points)
 
-    # SHAP (regressor only — most interpretable for point magnitude)
-    if not isinstance(final_reg, mord.OrdinalRidge):
+    # SHAP (regressor only — most interpretable for point magnitude).
+    # TreeExplainer only supports tree-based models.
+    if isinstance(final_reg, (lgb.LGBMRegressor, xgb.XGBRegressor)):
         shap_df = compute_shap(final_reg, X_pointed)
         print("\n--- Top 20 features by mean |SHAP| (regressor) ---")
         print(shap_df.head(20).to_string())
@@ -369,6 +397,8 @@ def main(data_path: str | None = None) -> None:
         "classifier": final_clf,
         "classifier_scaler": scaler,
         "regressor": final_reg,
+        "regressor_scaler": reg_scaler,
+        "tfidf_vectorizer": tfidf_vectorizer,
         "clf_results": clf_results,
         "reg_results": reg_results,
         "naive_baseline_mae": naive_mae,

@@ -67,9 +67,11 @@ def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> 
     clf = artifact["classifier"]
     scaler: StandardScaler | None = artifact.get("classifier_scaler")
     reg = artifact["regressor"]
+    reg_scaler: StandardScaler | None = artifact.get("regressor_scaler")
     feature_cols = artifact["feature_columns"]
+    tfidf_vectorizer = artifact.get("tfidf_vectorizer")
 
-    X = build_feature_matrix(unlabeled)
+    X, _ = build_feature_matrix(unlabeled, tfidf_vectorizer=tfidf_vectorizer)
 
     # Align columns in case feature set has drifted
     for col in set(feature_cols) - set(X.columns):
@@ -84,7 +86,10 @@ def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> 
         pointed_probs = clf.predict_proba(X)[:, 1]
 
     # Stage 2 — point estimate (context only, not used for ranking)
-    raw_reg = reg.predict(X)
+    if reg_scaler is not None:
+        raw_reg = reg.predict(reg_scaler.transform(X))
+    else:
+        raw_reg = reg.predict(X)
     snapped = [_snap_to_valid(p) for p in raw_reg]
 
     results = pd.DataFrame({
