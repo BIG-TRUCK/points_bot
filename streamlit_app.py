@@ -211,8 +211,7 @@ def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: p
     # actually running on — localhost during dev, the real Streamlit Cloud
     # URL once deployed — so these work correctly without hardcoding it.
     sections_html = render_report_sections(artifact, predictions_df, card_pool_df)
-    st.markdown(
-        f"""{REPORT_CSS}
+    body = f"""{REPORT_CSS}
 <div class="viz-root">
   <div class="cta-row">
     <a class="cta-button primary" href="?view=score">🃏 Try it out</a>
@@ -220,9 +219,14 @@ def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: p
   </div>
   <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary.</p>
   {sections_html}
-</div>""",
-        unsafe_allow_html=True,
-    )
+</div>"""
+    # st.markdown runs content through a CommonMark parser before honoring
+    # unsafe_allow_html — any line indented 4+ spaces reads as an indented
+    # code block there, which report_content.py's nested f-strings produce
+    # freely (harmless in a plain .html file, but not here). Strip leading
+    # whitespace per line so nothing gets misread as code / silently dropped.
+    flat_body = "\n".join(line.lstrip() for line in body.split("\n"))
+    st.markdown(flat_body, unsafe_allow_html=True)
 
 
 st.title("🎯 CHL Points Bot")
