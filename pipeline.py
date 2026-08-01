@@ -27,7 +27,7 @@ BASIC_LANDS = {
 ORACLE_FEATURES = [
     "mana_cost", "cmc", "type_line", "power", "toughness",
     "color_identity", "keywords", "game_changer", "rarity",
-    "edhrec_rank", "produced_mana",
+    "edhrec_rank", "produced_mana", "oracle_text",
 ]
 
 
