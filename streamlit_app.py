@@ -89,7 +89,7 @@ def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: 
 
 
 st.title("🎯 CHL Points Bot")
-st.caption("Community feedback tool for the 7-point Highlander points model.")
+st.caption("Community feedback tool for the 10-point Canadian Highlander (CHL) points model.")
 
 try:
     predictions_df = load_predictions()

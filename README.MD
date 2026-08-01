@@ -1,6 +1,6 @@
 ## Points Bot
 
-This is a project for attempting to identify point-worthy cards in the 7-point Highlander MtG format. 
+This is a project for attempting to identify point-worthy cards in the 10-point Canadian Highlander (CHL) MtG format. 
 
 ### Process
 1. Top-8 decklists are scraped from 7ph.com.au tournament result reports.

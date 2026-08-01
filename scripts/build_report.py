@@ -248,7 +248,7 @@ def build(model_path: str = MODEL_PATH, predictions_path: str = PREDICTIONS_PATH
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">7-point Highlander points model — evaluation summary. Generated {generated_at}.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated {generated_at}.</p>
 
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
