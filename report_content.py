@@ -100,18 +100,6 @@ REPORT_CSS = """<style>
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
-  .viz-root .tab-row { display: flex; gap: 4px; border-bottom: 1px solid var(--gridline); margin: 4px 0 28px; flex-wrap: wrap; }
-  .viz-root .tab-link {
-    display: inline-block;
-    padding: 10px 18px;
-    font-weight: 600;
-    text-decoration: none;
-    color: var(--text-secondary);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-  }
-  .viz-root .tab-link:hover { color: var(--text-primary); }
-  .viz-root .tab-link.active { color: var(--series-1); border-bottom-color: var(--series-1); }
 </style>"""
 
 

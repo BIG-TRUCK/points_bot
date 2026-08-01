@@ -99,11 +99,12 @@ def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: 
                 st.error(msg)
 
 
-NAV_TABS = [
-    ("landing", "Overview"),
-    ("score", "🃏 Try it out"),
-    ("results", "🔎 See the results"),
-]
+VIEW_LABELS = {
+    "landing": "Overview",
+    "score": "🃏 Try it out",
+    "results": "🔎 See the results",
+}
+LABEL_TO_VIEW = {label: key for key, label in VIEW_LABELS.items()}
 
 
 def _flatten_for_markdown(text: str) -> str:
@@ -113,17 +114,26 @@ def _flatten_for_markdown(text: str) -> str:
     return "\n".join(line.lstrip() for line in text.split("\n"))
 
 
-def nav_tabs(active: str) -> None:
-    links = "".join(
-        f'<a class="tab-link{" active" if key == active else ""}" href="?view={key}">{label}</a>'
-        for key, label in NAV_TABS
+def render_nav() -> str:
+    """Renders the top nav as a real widget (not <a> links), so switching
+    views reruns the app over the websocket in place instead of triggering a
+    full browser page load/reload. Returns the resolved view key for this
+    run, and keeps ?view= in sync so deep links still work."""
+    active = st.query_params.get("view", "landing")
+    selected_label = st.segmented_control(
+        "View",
+        options=list(VIEW_LABELS.values()),
+        default=VIEW_LABELS.get(active, VIEW_LABELS["landing"]),
+        label_visibility="collapsed",
+        key="nav_view",
     )
-    body = f'{REPORT_CSS}<div class="viz-root"><div class="tab-row">{links}</div></div>'
-    st.markdown(_flatten_for_markdown(body), unsafe_allow_html=True)
+    selected = LABEL_TO_VIEW.get(selected_label, "landing")
+    if selected != active:
+        st.query_params["view"] = selected
+    return selected
 
 
 def render_results(predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
-    nav_tabs("results")
     st.subheader("Top suspects")
     st.write(
         "Unlabeled cards ranked by the model's estimated probability that they "
@@ -166,7 +176,6 @@ def render_results(predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> 
 
 
 def render_score(card_pool_df: pd.DataFrame) -> None:
-    nav_tabs("score")
     st.subheader("Score any card")
     st.write(
         "Type a card name to get the model's live rating. Cards that have "
@@ -225,7 +234,6 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
 
 
 def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: pd.DataFrame) -> None:
-    nav_tabs("landing")
     # Relative hrefs (?view=...) resolve against whatever domain the app is
     # actually running on — localhost during dev, the real Streamlit Cloud
     # URL once deployed — so these work correctly without hardcoding it.
@@ -253,7 +261,7 @@ except FileNotFoundError as e:
     )
     st.stop()
 
-view = st.query_params.get("view", "landing")
+view = render_nav()
 
 if view == "results":
     render_results(predictions_df, card_pool_df)
