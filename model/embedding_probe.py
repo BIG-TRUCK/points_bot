@@ -1,13 +1,19 @@
-"""Empirical probe for what a tags_emb_*/keywords_emb_* dimension "means".
+"""Empirical probe for what a tags_emb_* dimension "means".
 
 Individual dimensions of a dense sentence-transformer embedding don't
 correspond to one human concept by construction (unlike the TF-IDF oracle
-text features, where a dimension literally *is* a word) — there's no lookup
+text features, where a dimension literally *is* a word) - there's no lookup
 table for "dimension 364 = ramp". This instead answers the question
 empirically: for a given dimension, which of the real, human-written tags
 on this dataset's cards have the highest/lowest average value on it?
 
 That's a correlational hunch for building intuition, not a rigorous claim.
+
+(keywords used to get the same embedding treatment as card_tags, hence this
+module's indirection through a "source column" rather than a hardcoded
+card_tags reference throughout - dropped as a model feature entirely since
+only 4 of 39 pointed cards have any keyword at all. Kept the indirection in
+case tags ever need a sibling embedded field again.)
 """
 
 from __future__ import annotations
@@ -23,25 +29,19 @@ from model.features import _embedder
 _MIN_TAG_SUPPORT = 3  # a tag must appear on at least this many cards to be reported
 _TOP_N_PER_SIDE = 4
 
-_EMB_COL_RE = re.compile(r"^(tags|keywords)_emb_(\d+)$")
+_EMB_COL_RE = re.compile(r"^tags_emb_(\d+)$")
+_SOURCE_COLUMN = "card_tags"
 
 # Embeddings are expensive to compute (a sentence-transformer forward pass
-# over every card) but cheap to slice once computed — cache per (per_card
+# over every card) but cheap to slice once computed - cache per (per_card
 # dataframe identity, source column) so probing several dimensions in one
 # report build only pays the encode() cost once per source column.
 _embedding_cache: dict[tuple[int, str], np.ndarray] = {}
 
 
-def _source_column(feature_name: str) -> Optional[str]:
+def _dimension_index(feature_name: str) -> Optional[int]:
     match = _EMB_COL_RE.match(feature_name)
-    if not match:
-        return None
-    return "card_tags" if match.group(1) == "tags" else "keywords"
-
-
-def _dimension_index(feature_name: str) -> int:
-    match = _EMB_COL_RE.match(feature_name)
-    return int(match.group(2))
+    return int(match.group(1)) if match else None
 
 
 def _tag_embeddings(per_card: pd.DataFrame, source_col: str) -> np.ndarray:
@@ -56,26 +56,25 @@ def _tag_embeddings(per_card: pd.DataFrame, source_col: str) -> np.ndarray:
 
 
 def probe_dimension(per_card: pd.DataFrame, feature_name: str) -> Optional[dict]:
-    """Returns {"positive": [(tag, delta), ...], "negative": [...]} — the
+    """Returns {"positive": [(tag, delta), ...], "negative": [...]} - the
     real tags whose cards average highest/lowest on this one embedding
     dimension, sorted by how far each pulls from the dataset-wide mean.
-    Returns None if `feature_name` isn't a tags_emb_*/keywords_emb_* column,
-    the source list column isn't present, or no tag clears the minimum
-    support threshold.
+    Returns None if `feature_name` isn't a tags_emb_* column, the source
+    list column isn't present, or no tag clears the minimum support
+    threshold.
     """
-    source_col = _source_column(feature_name)
-    if source_col is None or source_col not in per_card.columns:
+    dim = _dimension_index(feature_name)
+    if dim is None or _SOURCE_COLUMN not in per_card.columns:
         return None
 
-    dim = _dimension_index(feature_name)
-    embeddings = _tag_embeddings(per_card, source_col)
+    embeddings = _tag_embeddings(per_card, _SOURCE_COLUMN)
     if dim >= embeddings.shape[1]:
         return None
     values = embeddings[:, dim]
     overall_mean = float(values.mean())
 
     tag_values: dict[str, list[float]] = {}
-    for row_tags, val in zip(per_card[source_col], values):
+    for row_tags, val in zip(per_card[_SOURCE_COLUMN], values):
         for tag in set(row_tags or []):
             tag_values.setdefault(tag, []).append(float(val))
 

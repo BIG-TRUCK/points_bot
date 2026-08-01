@@ -13,7 +13,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MultiLabelBinarizer, OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder
 
 # Sentence transformer model — downloaded once and cached locally by the library
 _EMBEDDER: Optional[SentenceTransformer] = None
@@ -47,7 +47,6 @@ class FeaturePreprocessors:
     tfidf_vectorizer: TfidfVectorizer
     imputer: SimpleImputer
     rarity_encoder: OrdinalEncoder
-    keyword_binarizer: MultiLabelBinarizer
 
 
 def _embedder() -> SentenceTransformer:
@@ -111,18 +110,6 @@ def _rel_counts(row: pd.Series) -> dict:
         val = row.get(col, [])
         counts[f"n_{col}"] = len(val) if isinstance(val, list) else 0
     return counts
-
-
-def _slugify(name: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "_", str(name).lower()).strip("_")
-    return slug or "unknown"
-
-
-def _tag_keyword_string(row: pd.Series) -> str:
-    tags = row.get("card_tags", []) or []
-    keywords = row.get("keywords", []) or []
-    parts = list(tags) + list(keywords)
-    return " ".join(str(p) for p in parts)
 
 
 # ---------------------------------------------------------------------------
@@ -238,33 +225,21 @@ def build_feature_matrix(
     # values with heavy near-synonym overlap ("removal" / "removal-creature"
     # / "spot removal"), which is exactly what a dense embedding can partially
     # capture (and a flat per-tag encoding can't).
+    #
+    # keywords were tried both as embeddings and as multi-hot (see git
+    # history) and dropped entirely: only 4 of the 39 pointed cards have any
+    # keyword at all (3 distinct keywords total among them), so neither
+    # representation gave the model much to learn from on the one class that
+    # matters most, and multi-hot measurably hurt vs. embeddings without
+    # closing that gap.
     tags = df.get("card_tags", pd.Series([[]] * len(df), index=df.index))
     tags = tags.apply(lambda x: " ".join(str(p) for p in (x or [])))
     tags_embeddings = _embedder().encode(tags.tolist(), show_progress_bar=True, batch_size=64)
-    tags_df = pd.DataFrame(
+    embed_df = pd.DataFrame(
         tags_embeddings,
         index=df.index,
         columns=[f"tags_emb_{i}" for i in range(tags_embeddings.shape[1])],
     )
-
-    # keywords, in contrast, are a small (~164 distinct values) fixed official
-    # vocabulary with no synonym structure to exploit and under 1 keyword/card
-    # on average — one-hot per keyword is smaller *and* directly
-    # interpretable (SHAP names the actual keyword), unlike a dense embedding.
-    keyword_lists = df.get("keywords", pd.Series([[]] * len(df), index=df.index))
-    keyword_lists = keyword_lists.apply(lambda x: list(x) if isinstance(x, list) else [])
-    keyword_binarizer = preprocessors.keyword_binarizer if preprocessors else MultiLabelBinarizer()
-    if preprocessors is None:
-        keyword_matrix = keyword_binarizer.fit_transform(keyword_lists)
-    else:
-        keyword_matrix = keyword_binarizer.transform(keyword_lists)
-    keywords_df = pd.DataFrame(
-        keyword_matrix,
-        index=df.index,
-        columns=[f"keyword_{_slugify(c)}" for c in keyword_binarizer.classes_],
-    )
-
-    embed_df = pd.concat([tags_df, keywords_df], axis=1)
 
     # TF-IDF over oracle (rules) text — stopwords pruned before vectorising.
     oracle_text = df.get("oracle_text", pd.Series("", index=df.index))
@@ -291,7 +266,6 @@ def build_feature_matrix(
             tfidf_vectorizer=tfidf_vectorizer,
             imputer=imputer,
             rarity_encoder=rarity_encoder,
-            keyword_binarizer=keyword_binarizer,
         )
 
     return pd.concat([feat_df, embed_df, tfidf_df], axis=1), preprocessors

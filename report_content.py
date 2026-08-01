@@ -119,9 +119,9 @@ def _esc(value) -> str:
 
 
 def _embedding_probe_html(feature_name: str, per_card: "Optional[pd.DataFrame]") -> str:
-    """For a tags_emb_*/keywords_emb_* SHAP feature, a compact caption of
-    which real card tags associate with high/low values on that dimension -
-    see model/embedding_probe.py. Empty string for any other feature, or if
+    """For a tags_emb_* SHAP feature, a compact caption of which real card
+    tags associate with high/low values on that dimension - see
+    model/embedding_probe.py. Empty string for any other feature, or if
     per_card wasn't supplied."""
     if per_card is None:
         return ""
@@ -145,10 +145,10 @@ def _bar_chart_html(
     series: "Optional[pd.Series]", empty_note: str, per_card: "Optional[pd.DataFrame]" = None
 ) -> str:
     """Renders a horizontal bar chart (mean |SHAP|, single sequential hue)
-    as plain HTML/CSS - no JS required. For tags_emb_*/keywords_emb_*
-    features, adds a caption of the real tags that dimension correlates
-    with (see _embedding_probe_html) - those dimensions have no inherent
-    meaning the way a TF-IDF or structured-attribute feature name does."""
+    as plain HTML/CSS - no JS required. For tags_emb_* features, adds a
+    caption of the real tags that dimension correlates with (see
+    _embedding_probe_html) - those dimensions have no inherent meaning the
+    way a TF-IDF or structured-attribute feature name does."""
     if series is None or series.empty:
         return f'<p class="muted">{_esc(empty_note)}</p>'
 
@@ -330,7 +330,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   </div>
 
   <h2>Feature importance (mean |SHAP|) - classifier</h2>
-  <p class="muted">SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample (treat those as directional only). For tags_emb_*/keywords_emb_* features, &#8593;/&#8595; show which real card tags average highest/lowest on that dimension</p>
+  <p class="muted">SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample (treat those as directional only). For tags_emb_* features, &#8593;/&#8595; show which real card tags average highest/lowest on that dimension</p>
   {shap_clf_html}
 
   <h2>Feature importance (mean |SHAP|) - regressor</h2>

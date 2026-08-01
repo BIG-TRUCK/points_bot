@@ -206,7 +206,6 @@ def _card_row_from_scryfall(card: dict) -> dict:
         "power":           card.get("power", face.get("power")),
         "toughness":       card.get("toughness", face.get("toughness")),
         "color_identity":  card.get("color_identity", []),
-        "keywords":        card.get("keywords", []),
         "game_changer":    card.get("game_changer", False),
         "rarity":          card.get("rarity"),
         "edhrec_rank":     card.get("edhrec_rank"),
