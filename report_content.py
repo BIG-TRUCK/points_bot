@@ -12,6 +12,8 @@ from typing import Optional
 
 import pandas as pd
 
+from model.embedding_probe import probe_dimension
+
 TOP_N_SUSPECTS = 15
 TOP_N_SHAP = 15
 
@@ -100,6 +102,10 @@ REPORT_CSS = """<style>
   .viz-root .bar-track { background: var(--series-1-track); border-radius: 4px; height: 16px; }
   .viz-root .bar-fill { background: var(--series-1); height: 16px; border-radius: 0 4px 4px 0; min-width: 4px; }
   .viz-root .bar-value { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .viz-root .emb-probe { font-size: 11px; margin: -2px 0 4px 150px; }
+  .viz-root .emb-probe span { margin-right: 12px; }
+  .viz-root .emb-probe .emb-pos { color: var(--series-1); }
+  .viz-root .emb-probe .emb-neg { color: var(--text-muted); }
   .viz-root table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .viz-root th, .viz-root td { padding: 8px 10px; border-bottom: 1px solid var(--gridline); text-align: left; }
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
@@ -112,9 +118,37 @@ def _esc(value) -> str:
     return html.escape(str(value)) if value is not None else ""
 
 
-def _bar_chart_html(series: "Optional[pd.Series]", empty_note: str) -> str:
+def _embedding_probe_html(feature_name: str, per_card: "Optional[pd.DataFrame]") -> str:
+    """For a tags_emb_*/keywords_emb_* SHAP feature, a compact caption of
+    which real card tags associate with high/low values on that dimension —
+    see model/embedding_probe.py. Empty string for any other feature, or if
+    per_card wasn't supplied."""
+    if per_card is None:
+        return ""
+    result = probe_dimension(per_card, feature_name)
+    if not result:
+        return ""
+
+    spans = []
+    if result["positive"]:
+        tags = ", ".join(_esc(tag) for tag, _delta in result["positive"])
+        spans.append(f'<span class="emb-pos">&#8593; {tags}</span>')
+    if result["negative"]:
+        tags = ", ".join(_esc(tag) for tag, _delta in result["negative"])
+        spans.append(f'<span class="emb-neg">&#8595; {tags}</span>')
+    if not spans:
+        return ""
+    return f'<div class="emb-probe">{"".join(spans)}</div>'
+
+
+def _bar_chart_html(
+    series: "Optional[pd.Series]", empty_note: str, per_card: "Optional[pd.DataFrame]" = None
+) -> str:
     """Renders a horizontal bar chart (mean |SHAP|, single sequential hue)
-    as plain HTML/CSS — no JS required."""
+    as plain HTML/CSS — no JS required. For tags_emb_*/keywords_emb_*
+    features, adds a caption of the real tags that dimension correlates
+    with (see _embedding_probe_html) — those dimensions have no inherent
+    meaning the way a TF-IDF or structured-attribute feature name does."""
     if series is None or series.empty:
         return f'<p class="muted">{_esc(empty_note)}</p>'
 
@@ -128,11 +162,17 @@ def _bar_chart_html(series: "Optional[pd.Series]", empty_note: str) -> str:
           <div class="bar-label" title="{_esc(name)}">{_esc(name)}</div>
           <div class="bar-track"><div class="bar-fill" style="width:{pct:.1f}%" title="{_esc(name)}: {val:.4f}"></div></div>
           <div class="bar-value">{val:.3f}</div>
-        </div>""")
+        </div>
+        {_embedding_probe_html(name, per_card)}""")
     return f'<div class="bar-chart">{"".join(rows)}</div>'
 
 
-def _shap_section_html(shap_by_model: "Optional[dict[str, pd.DataFrame]]", best_name: str, stage_label: str) -> str:
+def _shap_section_html(
+    shap_by_model: "Optional[dict[str, pd.DataFrame]]",
+    best_name: str,
+    stage_label: str,
+    per_card: "Optional[pd.DataFrame]" = None,
+) -> str:
     """Renders one SHAP panel per candidate model, in a responsive grid —
     every candidate gets a chart, not just the stage's winner."""
     if not shap_by_model:
@@ -145,7 +185,7 @@ def _shap_section_html(shap_by_model: "Optional[dict[str, pd.DataFrame]]", best_
         panels.append(f"""
       <div class="shap-panel">
         <p class="panel-title">{_esc(name)}{badge}</p>
-        {_bar_chart_html(series, f"No SHAP values for {name}.")}
+        {_bar_chart_html(series, f"No SHAP values for {name}.", per_card=per_card)}
       </div>""")
     return f'<div class="shap-grid">{"".join(panels)}</div>'
 
@@ -236,8 +276,12 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
         for name, res in reg_results.items()
     )
 
-    shap_clf_html = _shap_section_html(artifact.get("shap_importance_clf"), best_clf_name, "classifier")
-    shap_reg_html = _shap_section_html(artifact.get("shap_importance_reg"), best_reg_name, "regressor")
+    shap_clf_html = _shap_section_html(
+        artifact.get("shap_importance_clf"), best_clf_name, "classifier", per_card=per_card
+    )
+    shap_reg_html = _shap_section_html(
+        artifact.get("shap_importance_reg"), best_reg_name, "regressor", per_card=per_card
+    )
 
     return f"""
   <section class="card">
@@ -286,7 +330,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   </div>
 
   <h2>Feature importance (mean |SHAP|) — classifier</h2>
-  <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact.</p>
+  <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact. For tags_emb_*/keywords_emb_* features (a dimension has no inherent meaning the way a word or attribute name does), &#8593;/&#8595; show which real card tags average highest/lowest on that dimension — empirical, not an exact label.</p>
   {shap_clf_html}
 
   <h2>Feature importance (mean |SHAP|) — regressor</h2>
