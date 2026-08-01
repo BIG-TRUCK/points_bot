@@ -27,6 +27,7 @@ gitignored and too large to ship). Regenerate after every retrain with:
     python -m scripts.export_app_data
 """
 
+import logging
 import pickle
 import urllib.parse
 
@@ -36,6 +37,16 @@ import streamlit as st
 from github_feedback import feedback_configured, submit_feedback
 from model.predict import VALID_POINTS, score_card
 from report_content import REPORT_CSS, render_report_sections
+
+# Streamlit's local file watcher walks every loaded module's __file__/__path__
+# to decide what to watch; transformers (a sentence-transformers dependency)
+# registers dozens of lazy vision-model submodules that need torchvision
+# (not installed, not needed — this project only uses text embeddings), so
+# that walk trips their lazy import and logs a caught-but-noisy warning on
+# every rerun. Silencing the logger (rather than disabling the watcher via
+# server.fileWatcherType) keeps the watcher itself working — auto-rerun on
+# save, manual reruns, and script-cache invalidation all depend on it.
+logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
 
 APP_DATA_DIR = "app_data"
 MODEL_PATH = f"{APP_DATA_DIR}/chl_model.pkl"
