@@ -55,6 +55,10 @@
   .viz-root .stat-label { font-size: 13px; color: var(--text-secondary); }
   .viz-root .stat-value { font-size: 30px; font-weight: 600; margin-top: 4px; font-variant-numeric: proportional-nums; }
   .viz-root .stat-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .viz-root .stat-subs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+  .viz-root .stat-sub { font-size: 12px; }
+  .viz-root .stat-sub-label { color: var(--text-muted); margin-right: 4px; }
+  .viz-root .stat-sub-value { color: var(--text-secondary); font-weight: 600; font-variant-numeric: tabular-nums; }
   .viz-root ul.candidates { margin: 0; padding-left: 20px; color: var(--text-secondary); }
   .viz-root ul.candidates li { margin: 4px 0; }
   .viz-root ul.candidates .params { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
@@ -98,7 +102,7 @@
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:37 UTC.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:46 UTC.</p>
   
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
@@ -130,36 +134,21 @@
       <div class="stat-label">AUPRC</div>
       <div class="stat-value">0.311</div>
       <div class="stat-note">headline metric — robust to the ~40:1,584 class imbalance</div>
+      
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">Best F1</div>
       <div class="stat-value">0.343</div>
       <div class="stat-note">at threshold 0.03</div>
-    </div>
-    
-    <div class="stat-tile">
-      <div class="stat-label">F1 @ 0.5 threshold</div>
-      <div class="stat-value">0.182</div>
-      
-    </div>
-    
-    <div class="stat-tile">
-      <div class="stat-label">Precision @ 0.5</div>
-      <div class="stat-value">1.000</div>
-      
-    </div>
-    
-    <div class="stat-tile">
-      <div class="stat-label">Recall @ 0.5</div>
-      <div class="stat-value">0.100</div>
-      
+      <div class="stat-subs"><div class="stat-sub"><span class="stat-sub-label">F1 @ 0.5</span><span class="stat-sub-value">0.182</span></div><div class="stat-sub"><span class="stat-sub-label">Precision @ 0.5</span><span class="stat-sub-value">1.000</span></div><div class="stat-sub"><span class="stat-sub-label">Recall @ 0.5</span><span class="stat-sub-value">0.100</span></div></div>
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">AUROC</div>
       <div class="stat-value">0.883</div>
       <div class="stat-note">reference only — reads high under this imbalance</div>
+      
     </div>
   </div>
   <p class="muted">Positives (pointed cards) use LOOCV-held-out probabilities; negatives (unpointed cards) use in-sample probabilities from the final model, since full LOOCV over the unpointed cards wasn&#x27;t run given the class imbalance. Treat these as a mildly optimistic upper bound, not a strict held-out estimate. AUPRC is the headline ranking metric — AUROC is included for reference but reads misleadingly high under ~40:1,584 class imbalance.</p>
@@ -171,12 +160,14 @@
       <div class="stat-label">MAE (points)</div>
       <div class="stat-value">0.975</div>
       
+      
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">Naive baseline MAE</div>
       <div class="stat-value">1.025</div>
       <div class="stat-note">always predicting the mode</div>
+      
     </div>
   </div>
 

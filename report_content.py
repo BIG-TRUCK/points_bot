@@ -68,6 +68,10 @@ REPORT_CSS = """<style>
   .viz-root .stat-label { font-size: 13px; color: var(--text-secondary); }
   .viz-root .stat-value { font-size: 30px; font-weight: 600; margin-top: 4px; font-variant-numeric: proportional-nums; }
   .viz-root .stat-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .viz-root .stat-subs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+  .viz-root .stat-sub { font-size: 12px; }
+  .viz-root .stat-sub-label { color: var(--text-muted); margin-right: 4px; }
+  .viz-root .stat-sub-value { color: var(--text-secondary); font-weight: 600; font-variant-numeric: tabular-nums; }
   .viz-root ul.candidates { margin: 0; padding-left: 20px; color: var(--text-secondary); }
   .viz-root ul.candidates li { margin: 4px 0; }
   .viz-root ul.candidates .params { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
@@ -166,13 +170,22 @@ def _format_params(params: dict) -> str:
     return ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
 
 
-def _stat_tile(label: str, value: str, note: str = "") -> str:
+def _stat_tile(label: str, value: str, note: str = "", subs: "Optional[list[tuple[str, str]]]" = None) -> str:
     note_html = f'<div class="stat-note">{_esc(note)}</div>' if note else ""
+    subs_html = ""
+    if subs:
+        sub_items = "".join(
+            f'<div class="stat-sub"><span class="stat-sub-label">{_esc(sub_label)}</span>'
+            f'<span class="stat-sub-value">{_esc(sub_value)}</span></div>'
+            for sub_label, sub_value in subs
+        )
+        subs_html = f'<div class="stat-subs">{sub_items}</div>'
     return f"""
     <div class="stat-tile">
       <div class="stat-label">{_esc(label)}</div>
       <div class="stat-value">{value}</div>
       {note_html}
+      {subs_html}
     </div>"""
 
 
@@ -248,10 +261,14 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   <h2>Classifier performance — {_esc(best_clf_name)}</h2>
   <div class="stat-grid">
     {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}", "headline metric — robust to the ~40:1,584 class imbalance")}
-    {_stat_tile("Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}")}
-    {_stat_tile("F1 @ 0.5 threshold", f"{clf_eval.get('f1_at_0.5', 0):.3f}")}
-    {_stat_tile("Precision @ 0.5", f"{clf_eval.get('precision_at_0.5', 0):.3f}")}
-    {_stat_tile("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}")}
+    {_stat_tile(
+        "Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}",
+        subs=[
+            ("F1 @ 0.5", f"{clf_eval.get('f1_at_0.5', 0):.3f}"),
+            ("Precision @ 0.5", f"{clf_eval.get('precision_at_0.5', 0):.3f}"),
+            ("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}"),
+        ],
+    )}
     {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only — reads high under this imbalance")}
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
