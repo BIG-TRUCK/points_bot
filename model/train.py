@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import shap
 import xgboost as xgb
+from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
@@ -28,7 +29,13 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import (
+    KFold,
+    LeaveOneOut,
+    RandomizedSearchCV,
+    StratifiedKFold,
+)
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, SVR
 
@@ -150,6 +157,75 @@ def _ordinal_regressor() -> mord.OrdinalRidge:
 
 def _svm_regressor() -> SVR:
     return SVR(C=1.0, kernel="rbf")
+
+
+# ---------------------------------------------------------------------------
+# Hyperparameter tuning — a small random search per candidate model type,
+# run once up front on a cheap K-fold split. This is separate from (and much
+# cheaper than) the LOOCV below, which compares model *types* against each
+# other with an unbiased held-out estimate; tuning only picks each type's
+# best internal settings before that comparison runs.
+# ---------------------------------------------------------------------------
+
+_GBM_PARAM_DIST = {
+    "n_estimators": [200, 400, 600],
+    "learning_rate": [0.03, 0.05, 0.08, 0.1],
+    "min_child_samples": [1, 2, 5],  # LightGBM; XGBoost uses min_child_weight (below)
+    "subsample": [0.6, 0.8, 1.0],
+    "colsample_bytree": [0.6, 0.8, 1.0],
+    "reg_alpha": [0.0, 0.1, 0.5],
+    "reg_lambda": [0.0, 0.1, 0.5],
+}
+_LGBM_PARAM_DIST = {**_GBM_PARAM_DIST, "num_leaves": [7, 15, 31]}
+_XGB_PARAM_DIST = {
+    k: v for k, v in _GBM_PARAM_DIST.items() if k != "min_child_samples"
+} | {"max_depth": [2, 3, 4, 5], "min_child_weight": [1, 2, 5]}
+_LOGISTIC_PARAM_DIST = {"C": [0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0]}
+_SVC_PARAM_DIST = {
+    "C": [0.1, 0.3, 1.0, 3.0, 10.0],
+    "gamma": ["scale", "auto", 0.001, 0.01, 0.1],
+}
+_SVR_PARAM_DIST = {**_SVC_PARAM_DIST, "epsilon": [0.05, 0.1, 0.2, 0.5]}
+_ORDINAL_PARAM_DIST = {"alpha": [0.1, 0.3, 1.0, 3.0, 10.0, 30.0]}
+
+TUNE_N_ITER = 12
+
+
+def _tune(
+    base_model,
+    param_dist: dict,
+    X: pd.DataFrame,
+    y: pd.Series,
+    scoring: str,
+    cv,
+    n_iter: int = TUNE_N_ITER,
+    random_state: int = 42,
+) -> dict:
+    """Randomized search over `param_dist` for one model type. Distance
+    models get StandardScaler baked into the CV pipeline so scaling never
+    leaks across folds (unlike the LOOCV below, which fits the scaler on
+    the full data once — an existing, accepted approximation there)."""
+    needs_scaling = _needs_scaling(base_model)
+    estimator = Pipeline([("scaler", StandardScaler()), ("model", base_model)]) if needs_scaling else base_model
+    params = {f"model__{k}": v for k, v in param_dist.items()} if needs_scaling else param_dist
+    search = RandomizedSearchCV(
+        estimator,
+        params,
+        n_iter=n_iter,
+        scoring=scoring,
+        cv=cv,
+        random_state=random_state,
+        n_jobs=1,
+    )
+    search.fit(X, y)
+    return {k.removeprefix("model__"): v for k, v in search.best_params_.items()}
+
+
+def _tuned_factory(base_model, tuned_params: dict):
+    def factory():
+        return clone(base_model).set_params(**tuned_params)
+
+    return factory
 
 
 # ---------------------------------------------------------------------------
@@ -361,12 +437,21 @@ def main(data_path: str | None = None) -> None:
     # ------------------------------------------------------------------
     logger.info("Stage 1 — Classifier LOOCV...")
 
-    clf_candidates = [
-        ("LightGBM", lambda: _lgbm_classifier(spw)),
-        ("XGBoost",  lambda: _xgb_classifier(spw)),
-        ("Logistic", _logistic_classifier),
-        ("SVM",      _svm_classifier),
+    logger.info(f"Tuning classifier hyperparameters ({TUNE_N_ITER}-iteration random search per candidate)...")
+    clf_tune_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    clf_candidates_untuned = [
+        ("LightGBM", _lgbm_classifier(spw), _LGBM_PARAM_DIST),
+        ("XGBoost", _xgb_classifier(spw), _XGB_PARAM_DIST),
+        ("Logistic", _logistic_classifier(), _LOGISTIC_PARAM_DIST),
+        ("SVM", _svm_classifier(), _SVC_PARAM_DIST),
     ]
+    clf_tuned_params: dict[str, dict] = {}
+    clf_candidates = []
+    for name, base_model, param_dist in clf_candidates_untuned:
+        best_params = _tune(base_model, param_dist, X_all, y_binary, scoring="average_precision", cv=clf_tune_cv)
+        clf_tuned_params[name] = best_params
+        logger.info(f"  {name} tuned params: {best_params}")
+        clf_candidates.append((name, _tuned_factory(base_model, best_params)))
 
     clf_results = {}
     for name, factory in clf_candidates:
@@ -475,12 +560,23 @@ def main(data_path: str | None = None) -> None:
     naive_mae = float(np.mean(np.abs(np.array(y_points, dtype=float) - mode_val)))
     logger.info(f"Naive baseline MAE (always predict mode={mode_val}): {naive_mae:.3f}")
 
-    reg_candidates = [
-        ("LightGBM",     _lgbm_regressor),
-        ("XGBoost",      _xgb_regressor),
-        ("OrdinalRidge", _ordinal_regressor),
-        ("SVM",          _svm_regressor),
+    logger.info(f"Tuning regressor hyperparameters ({TUNE_N_ITER}-iteration random search per candidate)...")
+    reg_tune_cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    reg_candidates_untuned = [
+        ("LightGBM", _lgbm_regressor(), _LGBM_PARAM_DIST),
+        ("XGBoost", _xgb_regressor(), _XGB_PARAM_DIST),
+        ("OrdinalRidge", _ordinal_regressor(), _ORDINAL_PARAM_DIST),
+        ("SVM", _svm_regressor(), _SVR_PARAM_DIST),
     ]
+    reg_tuned_params: dict[str, dict] = {}
+    reg_candidates = []
+    for name, base_model, param_dist in reg_candidates_untuned:
+        best_params = _tune(
+            base_model, param_dist, X_pointed, y_points, scoring="neg_mean_absolute_error", cv=reg_tune_cv
+        )
+        reg_tuned_params[name] = best_params
+        logger.info(f"  {name} tuned params: {best_params}")
+        reg_candidates.append((name, _tuned_factory(base_model, best_params)))
 
     reg_results = {}
     for name, factory in reg_candidates:
@@ -544,6 +640,8 @@ def main(data_path: str | None = None) -> None:
         "preprocessors": preprocessors,
         "clf_results": clf_results,
         "reg_results": reg_results,
+        "clf_tuned_params": clf_tuned_params,
+        "reg_tuned_params": reg_tuned_params,
         "naive_baseline_mae": naive_mae,
         "feature_columns": list(X_all.columns),
         "shap_importance_clf": shap_importance_clf,

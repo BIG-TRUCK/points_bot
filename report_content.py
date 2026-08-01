@@ -68,8 +68,13 @@ REPORT_CSS = """<style>
   .viz-root .stat-label { font-size: 13px; color: var(--text-secondary); }
   .viz-root .stat-value { font-size: 30px; font-weight: 600; margin-top: 4px; font-variant-numeric: proportional-nums; }
   .viz-root .stat-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .viz-root .stat-subs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+  .viz-root .stat-sub { font-size: 12px; }
+  .viz-root .stat-sub-label { color: var(--text-muted); margin-right: 4px; }
+  .viz-root .stat-sub-value { color: var(--text-secondary); font-weight: 600; font-variant-numeric: tabular-nums; }
   .viz-root ul.candidates { margin: 0; padding-left: 20px; color: var(--text-secondary); }
   .viz-root ul.candidates li { margin: 4px 0; }
+  .viz-root ul.candidates .params { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
   .viz-root .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 720px) { .viz-root .two-col { grid-template-columns: 1fr; } }
   .viz-root .shap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -161,13 +166,26 @@ def _suspects_table_html(df: pd.DataFrame, top_n: int) -> str:
     return "".join(rows)
 
 
-def _stat_tile(label: str, value: str, note: str = "") -> str:
+def _format_params(params: dict) -> str:
+    return ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
+
+
+def _stat_tile(label: str, value: str, note: str = "", subs: "Optional[list[tuple[str, str]]]" = None) -> str:
     note_html = f'<div class="stat-note">{_esc(note)}</div>' if note else ""
+    subs_html = ""
+    if subs:
+        sub_items = "".join(
+            f'<div class="stat-sub"><span class="stat-sub-label">{_esc(sub_label)}</span>'
+            f'<span class="stat-sub-value">{_esc(sub_value)}</span></div>'
+            for sub_label, sub_value in subs
+        )
+        subs_html = f'<div class="stat-subs">{sub_items}</div>'
     return f"""
     <div class="stat-tile">
       <div class="stat-label">{_esc(label)}</div>
       <div class="stat-value">{value}</div>
       {note_html}
+      {subs_html}
     </div>"""
 
 
@@ -179,6 +197,11 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     n_total = len(per_card)
     n_pointed = int((per_card["points"].notna() & (per_card["points"] > 0)).sum())
     n_unpointed = n_total - n_pointed
+    # F1 of a naive "flag every card as pointed" classifier: precision =
+    # base rate, recall = 1.0, so F1 = 2*base_rate/(1+base_rate), which
+    # simplifies to this — a more meaningful yardstick than an arbitrary
+    # fixed number under this ~40:1,584 imbalance (see AUPRC's note below).
+    naive_clf_f1 = (2 * n_pointed / (n_pointed + n_total)) if n_total else 0.0
 
     clf_results = artifact.get("clf_results", {})
     reg_results = artifact.get("reg_results", {})
@@ -187,15 +210,29 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     clf_eval = artifact.get("classifier_eval", {})
     naive_mae = artifact.get("naive_baseline_mae")
     reg_mae = reg_results.get(best_reg_name, {}).get("mae")
+    clf_tuned_params = artifact.get("clf_tuned_params", {})
+    reg_tuned_params = artifact.get("reg_tuned_params", {})
 
     clf_candidates_html = "".join(
         f"<li><strong>{_esc(name)}</strong> — mean rank pct {res['mean_rank_pct']:.3f}"
-        f"{' (winner)' if name == best_clf_name else ''}</li>"
+        f"{' (winner)' if name == best_clf_name else ''}"
+        + (
+            f"<div class='params'>{_esc(_format_params(params))}</div>"
+            if (params := clf_tuned_params.get(name))
+            else ""
+        )
+        + "</li>"
         for name, res in clf_results.items()
     )
     reg_candidates_html = "".join(
         f"<li><strong>{_esc(name)}</strong> — MAE {res['mae']:.3f}"
-        f"{' (winner)' if name == best_reg_name else ''}</li>"
+        f"{' (winner)' if name == best_reg_name else ''}"
+        + (
+            f"<div class='params'>{_esc(_format_params(params))}</div>"
+            if (params := reg_tuned_params.get(name))
+            else ""
+        )
+        + "</li>"
         for name, res in reg_results.items()
     )
 
@@ -211,7 +248,8 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
       pointed cards. Both stages pick the best of several candidate models via
-      leave-one-out cross-validation.
+      leave-one-out cross-validation; each candidate's hyperparameters (shown below it)
+      come from a small random search on a cheaper K-fold split beforehand.
     </p>
     <div class="two-col">
       <div>
@@ -228,10 +266,15 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   <h2>Classifier performance — {_esc(best_clf_name)}</h2>
   <div class="stat-grid">
     {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}", "headline metric — robust to the ~40:1,584 class imbalance")}
-    {_stat_tile("Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}")}
-    {_stat_tile("F1 @ 0.5 threshold", f"{clf_eval.get('f1_at_0.5', 0):.3f}")}
-    {_stat_tile("Precision @ 0.5", f"{clf_eval.get('precision_at_0.5', 0):.3f}")}
-    {_stat_tile("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}")}
+    {_stat_tile(
+        "Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}",
+        subs=[
+            ("F1 @ 0.5", f"{clf_eval.get('f1_at_0.5', 0):.3f}"),
+            ("Precision @ 0.5", f"{clf_eval.get('precision_at_0.5', 0):.3f}"),
+            ("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}"),
+        ],
+    )}
+    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}", "always flagging every card as pointed")}
     {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only — reads high under this imbalance")}
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
