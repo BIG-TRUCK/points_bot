@@ -87,17 +87,6 @@
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
-  .viz-root .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 28px; }
-  .viz-root .cta-button {
-    display: inline-block;
-    padding: 12px 22px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    border: 1px solid var(--border);
-  }
-  .viz-root .cta-button.primary { background: var(--series-1); color: #ffffff; border-color: var(--series-1); }
-  .viz-root .cta-button.secondary { background: var(--surface-1); color: var(--text-primary); }
 </style>
 <style>
   body { margin: 0; background: var(--surface-page, #f9f9f7); }
@@ -108,7 +97,7 @@
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 05:26 UTC.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:27 UTC.</p>
   
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
@@ -123,11 +112,11 @@
     <div class="two-col">
       <div>
         <p><strong>Classifier candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — mean rank pct 0.829</li><li><strong>XGBoost</strong> — mean rank pct 0.858 (winner)</li><li><strong>Logistic</strong> — mean rank pct 0.831</li><li><strong>SVM</strong> — mean rank pct 0.768</li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> — mean rank pct 0.847</li><li><strong>XGBoost</strong> — mean rank pct 0.865 (winner)</li><li><strong>Logistic</strong> — mean rank pct 0.839</li><li><strong>SVM</strong> — mean rank pct 0.777</li></ul>
       </div>
       <div>
         <p><strong>Regressor candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — MAE 1.544</li><li><strong>XGBoost</strong> — MAE 1.331</li><li><strong>OrdinalRidge</strong> — MAE 1.100</li><li><strong>SVM</strong> — MAE 1.012 (winner)</li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> — MAE 1.369</li><li><strong>XGBoost</strong> — MAE 1.251</li><li><strong>OrdinalRidge</strong> — MAE 0.975 (winner)</li><li><strong>SVM</strong> — MAE 1.012</li></ul>
       </div>
     </div>
   </section>
@@ -137,14 +126,14 @@
     
     <div class="stat-tile">
       <div class="stat-label">AUPRC</div>
-      <div class="stat-value">0.276</div>
+      <div class="stat-value">0.311</div>
       <div class="stat-note">headline metric — robust to the ~40:1,584 class imbalance</div>
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">Best F1</div>
-      <div class="stat-value">0.290</div>
-      <div class="stat-note">at threshold 0.02</div>
+      <div class="stat-value">0.343</div>
+      <div class="stat-note">at threshold 0.03</div>
     </div>
     
     <div class="stat-tile">
@@ -167,18 +156,18 @@
     
     <div class="stat-tile">
       <div class="stat-label">AUROC</div>
-      <div class="stat-value">0.874</div>
+      <div class="stat-value">0.883</div>
       <div class="stat-note">reference only — reads high under this imbalance</div>
     </div>
   </div>
   <p class="muted">Positives (pointed cards) use LOOCV-held-out probabilities; negatives (unpointed cards) use in-sample probabilities from the final model, since full LOOCV over the unpointed cards wasn&#x27;t run given the class imbalance. Treat these as a mildly optimistic upper bound, not a strict held-out estimate. AUPRC is the headline ranking metric — AUROC is included for reference but reads misleadingly high under ~40:1,584 class imbalance.</p>
 
-  <h2>Regressor performance — SVM</h2>
+  <h2>Regressor performance — OrdinalRidge</h2>
   <div class="stat-grid">
     
     <div class="stat-tile">
       <div class="stat-label">MAE (points)</div>
-      <div class="stat-value">1.012</div>
+      <div class="stat-value">0.975</div>
       
     </div>
     
@@ -197,78 +186,78 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 0.7494"></div></div>
-          <div class="bar-value">0.749</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 0.6956"></div></div>
+          <div class="bar-value">0.696</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_263">tags_emb_263</div>
-          <div class="bar-track"><div class="bar-fill" style="width:61.0%" title="tags_emb_263: 0.4574"></div></div>
-          <div class="bar-value">0.457</div>
+          <div class="bar-track"><div class="bar-fill" style="width:61.8%" title="tags_emb_263: 0.4296"></div></div>
+          <div class="bar-value">0.430</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
-          <div class="bar-track"><div class="bar-fill" style="width:34.8%" title="edhrec_rank: 0.2606"></div></div>
+          <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40.8%" title="tags_emb_191: 0.2842"></div></div>
+          <div class="bar-value">0.284</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_206">keywords_emb_206</div>
+          <div class="bar-track"><div class="bar-fill" style="width:37.5%" title="keywords_emb_206: 0.2611"></div></div>
           <div class="bar-value">0.261</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:33.9%" title="tags_emb_206: 0.2541"></div></div>
-          <div class="bar-value">0.254</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_206">keywords_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:33.9%" title="keywords_emb_206: 0.2539"></div></div>
-          <div class="bar-value">0.254</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
-          <div class="bar-track"><div class="bar-fill" style="width:32.7%" title="tags_emb_191: 0.2453"></div></div>
-          <div class="bar-value">0.245</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_10">tags_emb_10</div>
-          <div class="bar-track"><div class="bar-fill" style="width:29.3%" title="tags_emb_10: 0.2198"></div></div>
-          <div class="bar-value">0.220</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:27.9%" title="color_U: 0.2089"></div></div>
-          <div class="bar-value">0.209</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
-          <div class="bar-track"><div class="bar-fill" style="width:27.5%" title="tags_emb_0: 0.2063"></div></div>
-          <div class="bar-value">0.206</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_98">tags_emb_98</div>
-          <div class="bar-track"><div class="bar-fill" style="width:26.1%" title="tags_emb_98: 0.1958"></div></div>
-          <div class="bar-value">0.196</div>
+          <div class="bar-track"><div class="bar-fill" style="width:33.0%" title="tags_emb_206: 0.2299"></div></div>
+          <div class="bar-value">0.230</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:22.9%" title="avg_placement: 0.1716"></div></div>
-          <div class="bar-value">0.172</div>
+          <div class="bar-track"><div class="bar-fill" style="width:31.4%" title="avg_placement: 0.2186"></div></div>
+          <div class="bar-value">0.219</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_332">tags_emb_332</div>
-          <div class="bar-track"><div class="bar-fill" style="width:22.6%" title="tags_emb_332: 0.1697"></div></div>
-          <div class="bar-value">0.170</div>
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:29.3%" title="color_U: 0.2041"></div></div>
+          <div class="bar-value">0.204</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_10">tags_emb_10</div>
+          <div class="bar-track"><div class="bar-fill" style="width:28.4%" title="tags_emb_10: 0.1973"></div></div>
+          <div class="bar-value">0.197</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
+          <div class="bar-track"><div class="bar-fill" style="width:26.9%" title="edhrec_rank: 0.1868"></div></div>
+          <div class="bar-value">0.187</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
+          <div class="bar-track"><div class="bar-fill" style="width:24.1%" title="tags_emb_0: 0.1678"></div></div>
+          <div class="bar-value">0.168</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="keywords_emb_120">keywords_emb_120</div>
-          <div class="bar-track"><div class="bar-fill" style="width:20.2%" title="keywords_emb_120: 0.1516"></div></div>
-          <div class="bar-value">0.152</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.4%" title="keywords_emb_120: 0.1488"></div></div>
+          <div class="bar-value">0.149</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_274">tags_emb_274</div>
-          <div class="bar-track"><div class="bar-fill" style="width:17.8%" title="tags_emb_274: 0.1335"></div></div>
-          <div class="bar-value">0.133</div>
+          <div class="bar-label" title="tags_emb_98">tags_emb_98</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.2%" title="tags_emb_98: 0.1472"></div></div>
+          <div class="bar-value">0.147</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_347">tags_emb_347</div>
-          <div class="bar-track"><div class="bar-fill" style="width:17.6%" title="tags_emb_347: 0.1319"></div></div>
-          <div class="bar-value">0.132</div>
+          <div class="bar-track"><div class="bar-fill" style="width:20.6%" title="tags_emb_347: 0.1435"></div></div>
+          <div class="bar-value">0.143</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_4">tags_emb_4</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.4%" title="tags_emb_4: 0.1282"></div></div>
+          <div class="bar-value">0.128</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_328">keywords_emb_328</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.1%" title="keywords_emb_328: 0.1258"></div></div>
+          <div class="bar-value">0.126</div>
         </div></div>
       </div>
       <div class="shap-panel">
@@ -276,78 +265,78 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 1.5288"></div></div>
-          <div class="bar-value">1.529</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:39.2%" title="avg_placement: 0.5988"></div></div>
-          <div class="bar-value">0.599</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_263">tags_emb_263</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.2%" title="tags_emb_263: 0.5374"></div></div>
-          <div class="bar-value">0.537</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:33.2%" title="color_U: 0.5080"></div></div>
-          <div class="bar-value">0.508</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 1.4418"></div></div>
+          <div class="bar-value">1.442</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
-          <div class="bar-track"><div class="bar-fill" style="width:25.2%" title="edhrec_rank: 0.3851"></div></div>
-          <div class="bar-value">0.385</div>
+          <div class="bar-track"><div class="bar-fill" style="width:23.7%" title="edhrec_rank: 0.3411"></div></div>
+          <div class="bar-value">0.341</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_263">tags_emb_263</div>
+          <div class="bar-track"><div class="bar-fill" style="width:22.0%" title="tags_emb_263: 0.3179"></div></div>
+          <div class="bar-value">0.318</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="avg_placement">avg_placement</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.8%" title="avg_placement: 0.3145"></div></div>
+          <div class="bar-value">0.315</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.8%" title="game_changer: 0.2880"></div></div>
-          <div class="bar-value">0.288</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.6%" title="game_changer: 0.3114"></div></div>
+          <div class="bar-value">0.311</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="top4_rate">top4_rate</div>
-          <div class="bar-track"><div class="bar-fill" style="width:16.9%" title="top4_rate: 0.2584"></div></div>
-          <div class="bar-value">0.258</div>
+          <div class="bar-label" title="keywords_emb_206">keywords_emb_206</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.5%" title="keywords_emb_206: 0.2236"></div></div>
+          <div class="bar-value">0.224</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.9%" title="tags_emb_0: 0.2431"></div></div>
-          <div class="bar-value">0.243</div>
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.4%" title="color_U: 0.2217"></div></div>
+          <div class="bar-value">0.222</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_274">tags_emb_274</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.0%" title="tags_emb_274: 0.2018"></div></div>
+          <div class="bar-value">0.202</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.3%" title="tags_emb_206: 0.2336"></div></div>
-          <div class="bar-value">0.234</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_10">tags_emb_10</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.3%" title="tags_emb_10: 0.2189"></div></div>
-          <div class="bar-value">0.219</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_60">tags_emb_60</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.1%" title="tags_emb_60: 0.2159"></div></div>
-          <div class="bar-value">0.216</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_275">tags_emb_275</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.9%" title="tags_emb_275: 0.2127"></div></div>
-          <div class="bar-value">0.213</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_166">tags_emb_166</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.8%" title="tags_emb_166: 0.2106"></div></div>
-          <div class="bar-value">0.211</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.3%" title="tags_emb_206: 0.1912"></div></div>
+          <div class="bar-value">0.191</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.3%" title="tags_emb_191: 0.2038"></div></div>
-          <div class="bar-value">0.204</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.4%" title="tags_emb_191: 0.1795"></div></div>
+          <div class="bar-value">0.179</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="avg_level">avg_level</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.0%" title="avg_level: 0.1984"></div></div>
-          <div class="bar-value">0.198</div>
+          <div class="bar-label" title="rarity">rarity</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.0%" title="rarity: 0.1592"></div></div>
+          <div class="bar-value">0.159</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_332">tags_emb_332</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.9%" title="tags_emb_332: 0.1426"></div></div>
+          <div class="bar-value">0.143</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_171">tags_emb_171</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.2%" title="tags_emb_171: 0.1322"></div></div>
+          <div class="bar-value">0.132</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_227">tags_emb_227</div>
+          <div class="bar-track"><div class="bar-fill" style="width:8.6%" title="tags_emb_227: 0.1246"></div></div>
+          <div class="bar-value">0.125</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_255">tags_emb_255</div>
+          <div class="bar-track"><div class="bar-fill" style="width:8.3%" title="tags_emb_255: 0.1202"></div></div>
+          <div class="bar-value">0.120</div>
         </div></div>
       </div>
       <div class="shap-panel">
@@ -355,78 +344,78 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="oracle_tfidf_add: 0.2723"></div></div>
-          <div class="bar-value">0.272</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:74.6%" title="color_U: 0.2032"></div></div>
-          <div class="bar-value">0.203</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="oracle_tfidf_add: 0.1472"></div></div>
+          <div class="bar-value">0.147</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:72.6%" title="appearances: 0.1976"></div></div>
-          <div class="bar-value">0.198</div>
+          <div class="bar-track"><div class="bar-fill" style="width:91.5%" title="appearances: 0.1347"></div></div>
+          <div class="bar-value">0.135</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:79.2%" title="color_U: 0.1166"></div></div>
+          <div class="bar-value">0.117</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_136">tags_emb_136</div>
-          <div class="bar-track"><div class="bar-fill" style="width:66.0%" title="tags_emb_136: 0.1797"></div></div>
-          <div class="bar-value">0.180</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_239">tags_emb_239</div>
-          <div class="bar-track"><div class="bar-fill" style="width:63.8%" title="tags_emb_239: 0.1738"></div></div>
-          <div class="bar-value">0.174</div>
+          <div class="bar-track"><div class="bar-fill" style="width:77.8%" title="tags_emb_136: 0.1145"></div></div>
+          <div class="bar-value">0.115</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_rest">oracle_tfidf_rest</div>
-          <div class="bar-track"><div class="bar-fill" style="width:63.4%" title="oracle_tfidf_rest: 0.1725"></div></div>
-          <div class="bar-value">0.173</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_284">tags_emb_284</div>
-          <div class="bar-track"><div class="bar-fill" style="width:62.1%" title="tags_emb_284: 0.1690"></div></div>
-          <div class="bar-value">0.169</div>
+          <div class="bar-track"><div class="bar-fill" style="width:74.6%" title="oracle_tfidf_rest: 0.1098"></div></div>
+          <div class="bar-value">0.110</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="top4_rate">top4_rate</div>
-          <div class="bar-track"><div class="bar-fill" style="width:53.6%" title="top4_rate: 0.1459"></div></div>
-          <div class="bar-value">0.146</div>
+          <div class="bar-track"><div class="bar-fill" style="width:74.2%" title="top4_rate: 0.1092"></div></div>
+          <div class="bar-value">0.109</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_52">tags_emb_52</div>
-          <div class="bar-track"><div class="bar-fill" style="width:52.3%" title="tags_emb_52: 0.1425"></div></div>
-          <div class="bar-value">0.142</div>
+          <div class="bar-label" title="tags_emb_239">tags_emb_239</div>
+          <div class="bar-track"><div class="bar-fill" style="width:72.4%" title="tags_emb_239: 0.1066"></div></div>
+          <div class="bar-value">0.107</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_284">tags_emb_284</div>
+          <div class="bar-track"><div class="bar-fill" style="width:68.8%" title="tags_emb_284: 0.1013"></div></div>
+          <div class="bar-value">0.101</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_70">tags_emb_70</div>
-          <div class="bar-track"><div class="bar-fill" style="width:48.9%" title="tags_emb_70: 0.1330"></div></div>
-          <div class="bar-value">0.133</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_318">tags_emb_318</div>
-          <div class="bar-track"><div class="bar-fill" style="width:46.6%" title="tags_emb_318: 0.1268"></div></div>
-          <div class="bar-value">0.127</div>
+          <div class="bar-track"><div class="bar-fill" style="width:61.8%" title="tags_emb_70: 0.0910"></div></div>
+          <div class="bar-value">0.091</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_313">tags_emb_313</div>
-          <div class="bar-track"><div class="bar-fill" style="width:45.8%" title="tags_emb_313: 0.1246"></div></div>
-          <div class="bar-value">0.125</div>
+          <div class="bar-track"><div class="bar-fill" style="width:59.7%" title="tags_emb_313: 0.0879"></div></div>
+          <div class="bar-value">0.088</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_52">tags_emb_52</div>
+          <div class="bar-track"><div class="bar-fill" style="width:57.6%" title="tags_emb_52: 0.0849"></div></div>
+          <div class="bar-value">0.085</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_39">tags_emb_39</div>
-          <div class="bar-track"><div class="bar-fill" style="width:45.4%" title="tags_emb_39: 0.1235"></div></div>
-          <div class="bar-value">0.124</div>
+          <div class="bar-track"><div class="bar-fill" style="width:56.6%" title="tags_emb_39: 0.0834"></div></div>
+          <div class="bar-value">0.083</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_61">tags_emb_61</div>
-          <div class="bar-track"><div class="bar-fill" style="width:44.7%" title="tags_emb_61: 0.1218"></div></div>
-          <div class="bar-value">0.122</div>
+          <div class="bar-label" title="tags_emb_171">tags_emb_171</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55.3%" title="tags_emb_171: 0.0814"></div></div>
+          <div class="bar-value">0.081</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_183">tags_emb_183</div>
-          <div class="bar-track"><div class="bar-fill" style="width:43.4%" title="tags_emb_183: 0.1183"></div></div>
-          <div class="bar-value">0.118</div>
+          <div class="bar-label" title="tags_emb_293">tags_emb_293</div>
+          <div class="bar-track"><div class="bar-fill" style="width:53.2%" title="tags_emb_293: 0.0783"></div></div>
+          <div class="bar-value">0.078</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_156">tags_emb_156</div>
+          <div class="bar-track"><div class="bar-fill" style="width:52.8%" title="tags_emb_156: 0.0777"></div></div>
+          <div class="bar-value">0.078</div>
         </div></div>
       </div>
       <div class="shap-panel">
@@ -434,77 +423,77 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="game_changer: 0.0272"></div></div>
-          <div class="bar-value">0.027</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:28.2%" title="n_better-than: 0.0077"></div></div>
-          <div class="bar-value">0.008</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="game_changer: 0.0328"></div></div>
+          <div class="bar-value">0.033</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_lose">oracle_tfidf_lose</div>
-          <div class="bar-track"><div class="bar-fill" style="width:26.9%" title="oracle_tfidf_lose: 0.0073"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:26.6%" title="oracle_tfidf_lose: 0.0087"></div></div>
+          <div class="bar-value">0.009</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="n_better-than">n_better-than</div>
+          <div class="bar-track"><div class="bar-fill" style="width:20.7%" title="n_better-than: 0.0068"></div></div>
           <div class="bar-value">0.007</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="n_referenced-by">n_referenced-by</div>
-          <div class="bar-track"><div class="bar-fill" style="width:26.4%" title="n_referenced-by: 0.0072"></div></div>
-          <div class="bar-value">0.007</div>
+          <div class="bar-label" title="oracle_tfidf_instant">oracle_tfidf_instant</div>
+          <div class="bar-track"><div class="bar-fill" style="width:19.8%" title="oracle_tfidf_instant: 0.0065"></div></div>
+          <div class="bar-value">0.006</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_150">tags_emb_150</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.8%" title="tags_emb_150: 0.0043"></div></div>
+          <div class="bar-label" title="oracle_tfidf_delve">oracle_tfidf_delve</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.9%" title="oracle_tfidf_delve: 0.0042"></div></div>
+          <div class="bar-value">0.004</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_planeswalker">oracle_tfidf_planeswalker</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.4%" title="oracle_tfidf_planeswalker: 0.0041"></div></div>
           <div class="bar-value">0.004</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_rest">oracle_tfidf_rest</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.0%" title="oracle_tfidf_rest: 0.0038"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.8%" title="oracle_tfidf_rest: 0.0039"></div></div>
+          <div class="bar-value">0.004</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_327">keywords_emb_327</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.7%" title="keywords_emb_327: 0.0039"></div></div>
+          <div class="bar-value">0.004</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="n_referenced-by">n_referenced-by</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.6%" title="n_referenced-by: 0.0038"></div></div>
+          <div class="bar-value">0.004</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_93">tags_emb_93</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.3%" title="tags_emb_93: 0.0037"></div></div>
           <div class="bar-value">0.004</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_chosen">oracle_tfidf_chosen</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.7%" title="oracle_tfidf_chosen: 0.0037"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.1%" title="oracle_tfidf_chosen: 0.0037"></div></div>
           <div class="bar-value">0.004</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_215">tags_emb_215</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.1%" title="tags_emb_215: 0.0036"></div></div>
+          <div class="bar-label" title="appearances">appearances</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.9%" title="appearances: 0.0036"></div></div>
           <div class="bar-value">0.004</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_232">tags_emb_232</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.9%" title="tags_emb_232: 0.0035"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_180">tags_emb_180</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.6%" title="tags_emb_180: 0.0034"></div></div>
+          <div class="bar-label" title="keywords_emb_20">keywords_emb_20</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="keywords_emb_20: 0.0034"></div></div>
           <div class="bar-value">0.003</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_delve">oracle_tfidf_delve</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.3%" title="oracle_tfidf_delve: 0.0033"></div></div>
+          <div class="bar-label" title="oracle_tfidf_ability">oracle_tfidf_ability</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.5%" title="oracle_tfidf_ability: 0.0031"></div></div>
           <div class="bar-value">0.003</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_instant">oracle_tfidf_instant</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.2%" title="oracle_tfidf_instant: 0.0033"></div></div>
-          <div class="bar-value">0.003</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_players">oracle_tfidf_players</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.0%" title="oracle_tfidf_players: 0.0033"></div></div>
-          <div class="bar-value">0.003</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_equal">oracle_tfidf_equal</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.2%" title="oracle_tfidf_equal: 0.0030"></div></div>
-          <div class="bar-value">0.003</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_24">keywords_emb_24</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.1%" title="keywords_emb_24: 0.0030"></div></div>
+          <div class="bar-label" title="tags_emb_334">tags_emb_334</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.4%" title="tags_emb_334: 0.0031"></div></div>
           <div class="bar-value">0.003</div>
         </div></div>
       </div></div>
@@ -516,78 +505,78 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_364">tags_emb_364</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.4612"></div></div>
-          <div class="bar-value">0.461</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.4421"></div></div>
+          <div class="bar-value">0.442</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:55.5%" title="rarity: 0.2559"></div></div>
-          <div class="bar-value">0.256</div>
+          <div class="bar-track"><div class="bar-fill" style="width:39.4%" title="rarity: 0.1742"></div></div>
+          <div class="bar-value">0.174</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_247">tags_emb_247</div>
-          <div class="bar-track"><div class="bar-fill" style="width:48.7%" title="tags_emb_247: 0.2246"></div></div>
-          <div class="bar-value">0.225</div>
+          <div class="bar-track"><div class="bar-fill" style="width:35.8%" title="tags_emb_247: 0.1581"></div></div>
+          <div class="bar-value">0.158</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_110">tags_emb_110</div>
-          <div class="bar-track"><div class="bar-fill" style="width:24.5%" title="tags_emb_110: 0.1128"></div></div>
-          <div class="bar-value">0.113</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
-          <div class="bar-track"><div class="bar-fill" style="width:20.4%" title="tags_emb_0: 0.0941"></div></div>
-          <div class="bar-value">0.094</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.5%" title="tags_emb_110: 0.0951"></div></div>
+          <div class="bar-value">0.095</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_3">tags_emb_3</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.5%" title="tags_emb_3: 0.0852"></div></div>
-          <div class="bar-value">0.085</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_195">tags_emb_195</div>
-          <div class="bar-track"><div class="bar-fill" style="width:16.7%" title="tags_emb_195: 0.0768"></div></div>
-          <div class="bar-value">0.077</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.4%" title="tags_emb_3: 0.0945"></div></div>
+          <div class="bar-value">0.094</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.3%" title="tags_emb_21: 0.0519"></div></div>
-          <div class="bar-value">0.052</div>
+          <div class="bar-track"><div class="bar-fill" style="width:17.7%" title="tags_emb_21: 0.0782"></div></div>
+          <div class="bar-value">0.078</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_236">tags_emb_236</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.9%" title="tags_emb_236: 0.0456"></div></div>
-          <div class="bar-value">0.046</div>
+          <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
+          <div class="bar-track"><div class="bar-fill" style="width:17.0%" title="tags_emb_0: 0.0750"></div></div>
+          <div class="bar-value">0.075</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_137">tags_emb_137</div>
+          <div class="bar-track"><div class="bar-fill" style="width:16.1%" title="tags_emb_137: 0.0713"></div></div>
+          <div class="bar-value">0.071</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_72">tags_emb_72</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.1%" title="tags_emb_72: 0.0418"></div></div>
-          <div class="bar-value">0.042</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_72: 0.0641"></div></div>
+          <div class="bar-value">0.064</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:8.7%" title="avg_placement: 0.0401"></div></div>
-          <div class="bar-value">0.040</div>
+          <div class="bar-label" title="is_artifact">is_artifact</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.4%" title="is_artifact: 0.0639"></div></div>
+          <div class="bar-value">0.064</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_74">tags_emb_74</div>
-          <div class="bar-track"><div class="bar-fill" style="width:7.2%" title="tags_emb_74: 0.0331"></div></div>
-          <div class="bar-value">0.033</div>
+          <div class="bar-label" title="tags_emb_195">tags_emb_195</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.8%" title="tags_emb_195: 0.0610"></div></div>
+          <div class="bar-value">0.061</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_6">tags_emb_6</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.9%" title="tags_emb_6: 0.0319"></div></div>
-          <div class="bar-value">0.032</div>
+          <div class="bar-label" title="tags_emb_342">tags_emb_342</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.6%" title="tags_emb_342: 0.0292"></div></div>
+          <div class="bar-value">0.029</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_254">tags_emb_254</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.6%" title="tags_emb_254: 0.0303"></div></div>
-          <div class="bar-value">0.030</div>
+          <div class="bar-label" title="tags_emb_89">tags_emb_89</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.1%" title="tags_emb_89: 0.0271"></div></div>
+          <div class="bar-value">0.027</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_244">tags_emb_244</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.5%" title="tags_emb_244: 0.0300"></div></div>
-          <div class="bar-value">0.030</div>
+          <div class="bar-label" title="n_better-than">n_better-than</div>
+          <div class="bar-track"><div class="bar-fill" style="width:5.3%" title="n_better-than: 0.0234"></div></div>
+          <div class="bar-value">0.023</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="appearances">appearances</div>
+          <div class="bar-track"><div class="bar-fill" style="width:5.3%" title="appearances: 0.0233"></div></div>
+          <div class="bar-value">0.023</div>
         </div></div>
       </div>
       <div class="shap-panel">
@@ -595,236 +584,236 @@
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_364">tags_emb_364</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.3368"></div></div>
-          <div class="bar-value">0.337</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.3108"></div></div>
+          <div class="bar-value">0.311</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_110">tags_emb_110</div>
-          <div class="bar-track"><div class="bar-fill" style="width:70.0%" title="tags_emb_110: 0.2358"></div></div>
-          <div class="bar-value">0.236</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.8%" title="oracle_tfidf_add: 0.1207"></div></div>
-          <div class="bar-value">0.121</div>
+          <div class="bar-track"><div class="bar-fill" style="width:58.4%" title="tags_emb_110: 0.1817"></div></div>
+          <div class="bar-value">0.182</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_15">tags_emb_15</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.6%" title="tags_emb_15: 0.1200"></div></div>
-          <div class="bar-value">0.120</div>
+          <div class="bar-track"><div class="bar-fill" style="width:48.5%" title="tags_emb_15: 0.1508"></div></div>
+          <div class="bar-value">0.151</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
+          <div class="bar-track"><div class="bar-fill" style="width:35.3%" title="oracle_tfidf_add: 0.1099"></div></div>
+          <div class="bar-value">0.110</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:25.1%" title="rarity: 0.0845"></div></div>
-          <div class="bar-value">0.084</div>
+          <div class="bar-track"><div class="bar-fill" style="width:29.7%" title="rarity: 0.0922"></div></div>
+          <div class="bar-value">0.092</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_66">tags_emb_66</div>
-          <div class="bar-track"><div class="bar-fill" style="width:20.1%" title="tags_emb_66: 0.0678"></div></div>
-          <div class="bar-value">0.068</div>
+          <div class="bar-track"><div class="bar-fill" style="width:24.1%" title="tags_emb_66: 0.0748"></div></div>
+          <div class="bar-value">0.075</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_251">tags_emb_251</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.5%" title="tags_emb_251: 0.0455"></div></div>
-          <div class="bar-value">0.045</div>
+          <div class="bar-label" title="tags_emb_214">tags_emb_214</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.4%" title="tags_emb_214: 0.0573"></div></div>
+          <div class="bar-value">0.057</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="appearances">appearances</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.0%" title="appearances: 0.0559"></div></div>
+          <div class="bar-value">0.056</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_307">tags_emb_307</div>
+          <div class="bar-track"><div class="bar-fill" style="width:16.3%" title="tags_emb_307: 0.0505"></div></div>
+          <div class="bar-value">0.051</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="is_artifact">is_artifact</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.7%" title="is_artifact: 0.0424"></div></div>
+          <div class="bar-value">0.042</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_125">tags_emb_125</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.3%" title="tags_emb_125: 0.0412"></div></div>
+          <div class="bar-value">0.041</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="n_better-than">n_better-than</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.7%" title="n_better-than: 0.0396"></div></div>
+          <div class="bar-value">0.040</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="avg_level">avg_level</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.8%" title="avg_level: 0.0365"></div></div>
-          <div class="bar-value">0.036</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="avg_level: 0.0320"></div></div>
+          <div class="bar-value">0.032</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_35">tags_emb_35</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.2%" title="tags_emb_35: 0.0345"></div></div>
-          <div class="bar-value">0.035</div>
+          <div class="bar-label" title="tags_emb_36">tags_emb_36</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_36: 0.0311"></div></div>
+          <div class="bar-value">0.031</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.7%" title="appearances: 0.0328"></div></div>
-          <div class="bar-value">0.033</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.7%" title="n_better-than: 0.0326"></div></div>
-          <div class="bar-value">0.033</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_219">tags_emb_219</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.0%" title="tags_emb_219: 0.0302"></div></div>
-          <div class="bar-value">0.030</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_117">tags_emb_117</div>
-          <div class="bar-track"><div class="bar-fill" style="width:8.6%" title="tags_emb_117: 0.0288"></div></div>
-          <div class="bar-value">0.029</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_46">tags_emb_46</div>
-          <div class="bar-track"><div class="bar-fill" style="width:7.9%" title="tags_emb_46: 0.0265"></div></div>
-          <div class="bar-value">0.027</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:7.5%" title="is_artifact: 0.0254"></div></div>
-          <div class="bar-value">0.025</div>
+          <div class="bar-label" title="tags_emb_119">tags_emb_119</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_119: 0.0309"></div></div>
+          <div class="bar-value">0.031</div>
         </div></div>
       </div>
       <div class="shap-panel">
-        <p class="panel-title">OrdinalRidge</p>
+        <p class="panel-title">OrdinalRidge <span class="badge">winner</span></p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="n_better-than: 0.2045"></div></div>
-          <div class="bar-value">0.204</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:94.5%" title="avg_placement: 0.1932"></div></div>
-          <div class="bar-value">0.193</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="n_better-than: 0.2772"></div></div>
+          <div class="bar-value">0.277</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:67.4%" title="appearances: 0.1378"></div></div>
-          <div class="bar-value">0.138</div>
+          <div class="bar-track"><div class="bar-fill" style="width:79.6%" title="appearances: 0.2206"></div></div>
+          <div class="bar-value">0.221</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="avg_placement">avg_placement</div>
+          <div class="bar-track"><div class="bar-fill" style="width:37.6%" title="avg_placement: 0.1043"></div></div>
+          <div class="bar-value">0.104</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:60.0%" title="is_artifact: 0.1227"></div></div>
-          <div class="bar-value">0.123</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="is_legendary">is_legendary</div>
-          <div class="bar-track"><div class="bar-fill" style="width:16.0%" title="is_legendary: 0.0327"></div></div>
-          <div class="bar-value">0.033</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.8%" title="game_changer: 0.0323"></div></div>
-          <div class="bar-value">0.032</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_turn">oracle_tfidf_turn</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.4%" title="oracle_tfidf_turn: 0.0315"></div></div>
-          <div class="bar-value">0.032</div>
+          <div class="bar-track"><div class="bar-fill" style="width:22.5%" title="is_artifact: 0.0625"></div></div>
+          <div class="bar-value">0.063</div>
         </div>
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.5%" title="rarity: 0.0193"></div></div>
-          <div class="bar-value">0.019</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="rarity: 0.0401"></div></div>
+          <div class="bar-value">0.040</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="n_referenced-by">n_referenced-by</div>
-          <div class="bar-track"><div class="bar-fill" style="width:7.2%" title="n_referenced-by: 0.0147"></div></div>
-          <div class="bar-value">0.015</div>
+          <div class="bar-label" title="total_colored_pips">total_colored_pips</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.1%" title="total_colored_pips: 0.0363"></div></div>
+          <div class="bar-value">0.036</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_180">tags_emb_180</div>
-          <div class="bar-track"><div class="bar-fill" style="width:7.0%" title="tags_emb_180: 0.0142"></div></div>
-          <div class="bar-value">0.014</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_32">tags_emb_32</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.0%" title="tags_emb_32: 0.0122"></div></div>
-          <div class="bar-value">0.012</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_19">keywords_emb_19</div>
-          <div class="bar-track"><div class="bar-fill" style="width:5.4%" title="keywords_emb_19: 0.0110"></div></div>
+          <div class="bar-label" title="cmc">cmc</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3.9%" title="cmc: 0.0107"></div></div>
           <div class="bar-value">0.011</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_301">keywords_emb_301</div>
-          <div class="bar-track"><div class="bar-fill" style="width:5.1%" title="keywords_emb_301: 0.0104"></div></div>
+          <div class="bar-label" title="keywords_emb_94">keywords_emb_94</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3.5%" title="keywords_emb_94: 0.0097"></div></div>
           <div class="bar-value">0.010</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_273">keywords_emb_273</div>
-          <div class="bar-track"><div class="bar-fill" style="width:5.0%" title="keywords_emb_273: 0.0103"></div></div>
-          <div class="bar-value">0.010</div>
+          <div class="bar-label" title="game_changer">game_changer</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.8%" title="game_changer: 0.0077"></div></div>
+          <div class="bar-value">0.008</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_158">keywords_emb_158</div>
-          <div class="bar-track"><div class="bar-fill" style="width:4.9%" title="keywords_emb_158: 0.0101"></div></div>
-          <div class="bar-value">0.010</div>
-        </div></div>
-      </div>
-      <div class="shap-panel">
-        <p class="panel-title">SVM <span class="badge">winner</span></p>
-        <div class="bar-chart">
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_326">tags_emb_326</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_326: 0.0148"></div></div>
-          <div class="bar-value">0.015</div>
+          <div class="bar-label" title="avg_level">avg_level</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.8%" title="avg_level: 0.0077"></div></div>
+          <div class="bar-value">0.008</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_283">keywords_emb_283</div>
-          <div class="bar-track"><div class="bar-fill" style="width:48.1%" title="keywords_emb_283: 0.0071"></div></div>
+          <div class="bar-label" title="tags_emb_84">tags_emb_84</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.6%" title="tags_emb_84: 0.0072"></div></div>
           <div class="bar-value">0.007</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_383">tags_emb_383</div>
-          <div class="bar-track"><div class="bar-fill" style="width:42.9%" title="tags_emb_383: 0.0064"></div></div>
+          <div class="bar-label" title="n_without-body">n_without-body</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.6%" title="n_without-body: 0.0071"></div></div>
+          <div class="bar-value">0.007</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_43">keywords_emb_43</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.5%" title="keywords_emb_43: 0.0068"></div></div>
+          <div class="bar-value">0.007</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_73">keywords_emb_73</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="keywords_emb_73: 0.0065"></div></div>
+          <div class="bar-value">0.007</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_13">keywords_emb_13</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="keywords_emb_13: 0.0065"></div></div>
+          <div class="bar-value">0.006</div>
+        </div></div>
+      </div>
+      <div class="shap-panel">
+        <p class="panel-title">SVM</p>
+        <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_7">tags_emb_7</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_7: 0.0099"></div></div>
+          <div class="bar-value">0.010</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_7">keywords_emb_7</div>
+          <div class="bar-track"><div class="bar-fill" style="width:79.9%" title="keywords_emb_7: 0.0079"></div></div>
+          <div class="bar-value">0.008</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_creature">oracle_tfidf_creature</div>
+          <div class="bar-track"><div class="bar-fill" style="width:78.0%" title="oracle_tfidf_creature: 0.0077"></div></div>
+          <div class="bar-value">0.008</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_27">keywords_emb_27</div>
+          <div class="bar-track"><div class="bar-fill" style="width:70.4%" title="keywords_emb_27: 0.0070"></div></div>
+          <div class="bar-value">0.007</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="keywords_emb_269">keywords_emb_269</div>
+          <div class="bar-track"><div class="bar-fill" style="width:61.4%" title="keywords_emb_269: 0.0061"></div></div>
           <div class="bar-value">0.006</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_286">tags_emb_286</div>
-          <div class="bar-track"><div class="bar-fill" style="width:42.2%" title="tags_emb_286: 0.0063"></div></div>
+          <div class="bar-label" title="keywords_emb_86">keywords_emb_86</div>
+          <div class="bar-track"><div class="bar-fill" style="width:59.3%" title="keywords_emb_86: 0.0059"></div></div>
           <div class="bar-value">0.006</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_218">tags_emb_218</div>
-          <div class="bar-track"><div class="bar-fill" style="width:41.0%" title="tags_emb_218: 0.0061"></div></div>
+          <div class="bar-label" title="keywords_emb_159">keywords_emb_159</div>
+          <div class="bar-track"><div class="bar-fill" style="width:58.3%" title="keywords_emb_159: 0.0058"></div></div>
           <div class="bar-value">0.006</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_319">tags_emb_319</div>
-          <div class="bar-track"><div class="bar-fill" style="width:39.2%" title="tags_emb_319: 0.0058"></div></div>
+          <div class="bar-label" title="tags_emb_324">tags_emb_324</div>
+          <div class="bar-track"><div class="bar-fill" style="width:57.6%" title="tags_emb_324: 0.0057"></div></div>
           <div class="bar-value">0.006</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_192">tags_emb_192</div>
-          <div class="bar-track"><div class="bar-fill" style="width:36.7%" title="tags_emb_192: 0.0054"></div></div>
+          <div class="bar-label" title="keywords_emb_68">keywords_emb_68</div>
+          <div class="bar-track"><div class="bar-fill" style="width:56.3%" title="keywords_emb_68: 0.0056"></div></div>
+          <div class="bar-value">0.006</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_255">tags_emb_255</div>
+          <div class="bar-track"><div class="bar-fill" style="width:52.8%" title="tags_emb_255: 0.0052"></div></div>
           <div class="bar-value">0.005</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_33">keywords_emb_33</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.4%" title="keywords_emb_33: 0.0053"></div></div>
+          <div class="bar-label" title="tags_emb_54">tags_emb_54</div>
+          <div class="bar-track"><div class="bar-fill" style="width:52.5%" title="tags_emb_54: 0.0052"></div></div>
           <div class="bar-value">0.005</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_313">tags_emb_313</div>
-          <div class="bar-track"><div class="bar-fill" style="width:31.7%" title="tags_emb_313: 0.0047"></div></div>
+          <div class="bar-label" title="tags_emb_187">tags_emb_187</div>
+          <div class="bar-track"><div class="bar-fill" style="width:51.8%" title="tags_emb_187: 0.0051"></div></div>
           <div class="bar-value">0.005</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_58">tags_emb_58</div>
-          <div class="bar-track"><div class="bar-fill" style="width:30.3%" title="tags_emb_58: 0.0045"></div></div>
-          <div class="bar-value">0.004</div>
+          <div class="bar-label" title="keywords_emb_312">keywords_emb_312</div>
+          <div class="bar-track"><div class="bar-fill" style="width:50.0%" title="keywords_emb_312: 0.0050"></div></div>
+          <div class="bar-value">0.005</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_323">keywords_emb_323</div>
-          <div class="bar-track"><div class="bar-fill" style="width:30.1%" title="keywords_emb_323: 0.0045"></div></div>
-          <div class="bar-value">0.004</div>
+          <div class="bar-label" title="is_artifact">is_artifact</div>
+          <div class="bar-track"><div class="bar-fill" style="width:47.5%" title="is_artifact: 0.0047"></div></div>
+          <div class="bar-value">0.005</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_63">keywords_emb_63</div>
-          <div class="bar-track"><div class="bar-fill" style="width:29.9%" title="keywords_emb_63: 0.0044"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_193">tags_emb_193</div>
-          <div class="bar-track"><div class="bar-fill" style="width:28.6%" title="tags_emb_193: 0.0042"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:28.4%" title="avg_placement: 0.0042"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_116">tags_emb_116</div>
-          <div class="bar-track"><div class="bar-fill" style="width:27.8%" title="tags_emb_116: 0.0041"></div></div>
-          <div class="bar-value">0.004</div>
+          <div class="bar-label" title="tags_emb_343">tags_emb_343</div>
+          <div class="bar-track"><div class="bar-fill" style="width:47.2%" title="tags_emb_343: 0.0047"></div></div>
+          <div class="bar-value">0.005</div>
         </div></div>
       </div></div>
 
@@ -845,7 +834,7 @@
       
         <tr>
           <td>Eladamri&#x27;s Call</td>
-          <td class="num">99.8%</td>
+          <td class="num">99.7%</td>
           <td class="num">1</td>
           <td class="num">7</td>
           <td class="num">2.4</td>
@@ -853,115 +842,115 @@
         </tr>
         <tr>
           <td>Brutal Cathar</td>
-          <td class="num">27.7%</td>
-          <td class="num">1</td>
+          <td class="num">25.2%</td>
+          <td class="num">2</td>
           <td class="num">4</td>
           <td class="num">2.2</td>
           <td class="num">100%</td>
         </tr>
         <tr>
+          <td>Outland Liberator</td>
+          <td class="num">20.9%</td>
+          <td class="num">3</td>
+          <td class="num">5</td>
+          <td class="num">5.0</td>
+          <td class="num">0%</td>
+        </tr>
+        <tr>
           <td>Grim Monolith</td>
-          <td class="num">11.7%</td>
-          <td class="num">2</td>
+          <td class="num">15.2%</td>
+          <td class="num">3</td>
           <td class="num">7</td>
           <td class="num">4.7</td>
           <td class="num">14%</td>
         </tr>
         <tr>
-          <td>Worldly Tutor</td>
-          <td class="num">11.5%</td>
+          <td>Lorien Revealed</td>
+          <td class="num">14.5%</td>
           <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">3.0</td>
+          <td class="num">60%</td>
+        </tr>
+        <tr>
+          <td>Wood Elves</td>
+          <td class="num">11.6%</td>
+          <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">2.8</td>
+          <td class="num">80%</td>
+        </tr>
+        <tr>
+          <td>Teferi&#x27;s Protection</td>
+          <td class="num">10.2%</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num">2.0</td>
+          <td class="num">100%</td>
+        </tr>
+        <tr>
+          <td>Worldly Tutor</td>
+          <td class="num">9.6%</td>
+          <td class="num">1</td>
           <td class="num">7</td>
           <td class="num">3.0</td>
           <td class="num">71%</td>
         </tr>
         <tr>
           <td>Electrolyze</td>
-          <td class="num">11.3%</td>
+          <td class="num">9.5%</td>
           <td class="num">1</td>
           <td class="num">7</td>
           <td class="num">3.3</td>
           <td class="num">57%</td>
         </tr>
         <tr>
-          <td>Outland Liberator</td>
-          <td class="num">11.1%</td>
-          <td class="num">1</td>
-          <td class="num">5</td>
-          <td class="num">5.0</td>
-          <td class="num">0%</td>
-        </tr>
-        <tr>
-          <td>Lorien Revealed</td>
-          <td class="num">10.9%</td>
-          <td class="num">1</td>
-          <td class="num">5</td>
-          <td class="num">3.0</td>
-          <td class="num">60%</td>
-        </tr>
-        <tr>
-          <td>Harmonize</td>
-          <td class="num">8.9%</td>
-          <td class="num">1</td>
-          <td class="num">5</td>
-          <td class="num">2.6</td>
-          <td class="num">80%</td>
-        </tr>
-        <tr>
           <td>Troll of Khazad-dum</td>
-          <td class="num">8.6%</td>
-          <td class="num">1</td>
+          <td class="num">9.4%</td>
+          <td class="num">2</td>
           <td class="num">5</td>
           <td class="num">3.6</td>
           <td class="num">60%</td>
         </tr>
         <tr>
-          <td>Enlightened Tutor</td>
-          <td class="num">7.5%</td>
-          <td class="num">1</td>
-          <td class="num">6</td>
-          <td class="num">4.2</td>
-          <td class="num">33%</td>
-        </tr>
-        <tr>
-          <td>Otawara, Soaring City</td>
-          <td class="num">7.5%</td>
-          <td class="num">1</td>
-          <td class="num">10</td>
-          <td class="num">4.0</td>
-          <td class="num">40%</td>
-        </tr>
-        <tr>
-          <td>Bonecrusher Giant</td>
-          <td class="num">7.3%</td>
-          <td class="num">1</td>
-          <td class="num">6</td>
-          <td class="num">2.7</td>
-          <td class="num">83%</td>
-        </tr>
-        <tr>
-          <td>Ajani, Nacatl Pariah</td>
-          <td class="num">6.1%</td>
-          <td class="num">1</td>
-          <td class="num">7</td>
-          <td class="num">3.7</td>
-          <td class="num">43%</td>
+          <td>Harmonize</td>
+          <td class="num">8.7%</td>
+          <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">2.6</td>
+          <td class="num">80%</td>
         </tr>
         <tr>
           <td>Gamble</td>
-          <td class="num">6.1%</td>
+          <td class="num">7.2%</td>
           <td class="num">2</td>
           <td class="num">2</td>
           <td class="num">4.0</td>
           <td class="num">50%</td>
         </tr>
         <tr>
-          <td>Fable of the Mirror-Breaker</td>
-          <td class="num">6.1%</td>
-          <td class="num">1</td>
-          <td class="num">11</td>
-          <td class="num">3.4</td>
-          <td class="num">64%</td>
+          <td>Lotus Petal</td>
+          <td class="num">6.6%</td>
+          <td class="num">3</td>
+          <td class="num">5</td>
+          <td class="num">4.4</td>
+          <td class="num">20%</td>
+        </tr>
+        <tr>
+          <td>Mishra&#x27;s Workshop</td>
+          <td class="num">5.7%</td>
+          <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">4.4</td>
+          <td class="num">20%</td>
+        </tr>
+        <tr>
+          <td>Entomb</td>
+          <td class="num">5.6%</td>
+          <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">3.8</td>
+          <td class="num">40%</td>
         </tr>
     </tbody>
   </table>
