@@ -20,6 +20,7 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+import requests
 from sklearn.preprocessing import StandardScaler
 
 from model.features import build_feature_matrix
@@ -160,6 +161,142 @@ def lookup(card_name: str) -> dict | None:
     }
     print(f"  {result['card_name']}: {result['pointed_prob']}% likely to be pointed, est. {result['est_points']}pt")
     return result
+
+
+SCRYFALL_NAMED_URL = "https://api.scryfall.com/cards/named"
+
+
+def _fetch_scryfall_card(card_name: str) -> dict | None:
+    """Live single-card lookup via Scryfall's fuzzy-named endpoint.
+
+    Used only as a fallback for a card not present in the local card pool —
+    far lighter than pulling Scryfall's full bulk dataset for one card.
+    """
+    try:
+        resp = requests.get(
+            SCRYFALL_NAMED_URL,
+            params={"fuzzy": card_name},
+            headers={"User-Agent": "BIGTRUCKPointsBot/1.0"},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        logger.warning(f"Scryfall lookup failed for '{card_name}': {e}")
+        return None
+    if resp.status_code != 200:
+        return None
+    return resp.json()
+
+
+def _card_row_from_scryfall(card: dict) -> dict:
+    """Maps a raw Scryfall card object onto the per-card schema build_feature_matrix
+    expects. Double-faced cards keep oracle_text/mana_cost/power/toughness only
+    on their `card_faces`, not the top-level object, so fall back to face 0."""
+    face = card.get("card_faces", [{}])[0] if card.get("card_faces") else {}
+    return {
+        "card_name":       card.get("name"),
+        "points":          np.nan,
+        "appearances":     0,
+        "avg_placement":   np.nan,
+        "top4_rate":       np.nan,
+        "avg_level":       np.nan,
+        "high_level_rate": np.nan,
+        "mana_cost":       card.get("mana_cost", face.get("mana_cost")),
+        "cmc":             card.get("cmc"),
+        "type_line":       card.get("type_line", face.get("type_line")),
+        "power":           card.get("power", face.get("power")),
+        "toughness":       card.get("toughness", face.get("toughness")),
+        "color_identity":  card.get("color_identity", []),
+        "keywords":        card.get("keywords", []),
+        "game_changer":    card.get("game_changer", False),
+        "rarity":          card.get("rarity"),
+        "edhrec_rank":     card.get("edhrec_rank"),
+        "produced_mana":   card.get("produced_mana", []),
+        "oracle_text":     card.get("oracle_text", face.get("oracle_text", "")),
+        "card_tags":       [],
+    }
+
+
+def score_card(
+    card_name: str,
+    model_path: str = MODEL_PATH,
+    card_pool: pd.DataFrame | None = None,
+) -> dict | None:
+    """Scores a single card by name — whether or not it has CHL tournament history.
+
+    If `card_pool` (the per-card training dataframe) contains the card, its
+    real tournament stats, tags, and relationships are used. Otherwise the
+    card is looked up live via Scryfall and scored from its intrinsic
+    properties alone (oracle text, cost, type, ...) — a materially weaker
+    signal, since tournament performance is the model's strongest predictor,
+    so the result is flagged with `has_tournament_history: False`.
+
+    Args:
+        card_name: Card name. Exact match against `card_pool`; fuzzy-matched
+            by Scryfall for the live-lookup fallback.
+        model_path: Path to the saved chl_model.pkl artifact.
+        card_pool: Per-card dataframe to check for existing tournament
+            history before falling back to a live Scryfall lookup. If None,
+            every card is treated as never-played.
+
+    Returns:
+        dict with card_name, pointed_prob, est_points, has_tournament_history,
+        already_pointed, and oracle summary fields for display — or None if
+        the card can't be found anywhere (including on Scryfall).
+    """
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found at {model_path}. Run model/train.py first.")
+    with open(model_path, "rb") as f:
+        artifact = pickle.load(f)
+
+    row = None
+    has_history = False
+    if card_pool is not None:
+        match = card_pool[card_pool["card_name"].str.lower() == card_name.lower()]
+        if not match.empty:
+            row = match.iloc[0]
+            has_history = (row.get("appearances") or 0) > 0
+
+    if row is not None and pd.notna(row.get("points")) and row.get("points", 0) > 0:
+        return {
+            "card_name":              row["card_name"],
+            "already_pointed":        True,
+            "points":                 int(row["points"]),
+            "has_tournament_history": has_history,
+            "mana_cost":              row.get("mana_cost"),
+            "type_line":              row.get("type_line"),
+            "oracle_text":            row.get("oracle_text"),
+            "rarity":                 row.get("rarity"),
+        }
+
+    if row is not None:
+        row_df = card_pool.loc[[row.name]]
+        display_name = row["card_name"]
+    else:
+        card = _fetch_scryfall_card(card_name)
+        if card is None:
+            return None
+        record = _card_row_from_scryfall(card)
+        row_df = pd.DataFrame([record])
+        display_name = record["card_name"]
+
+    feature_cols = artifact["feature_columns"]
+    X, _ = build_feature_matrix(row_df, preprocessors=artifact.get("preprocessors"))
+    X = _align_columns(X, feature_cols)
+
+    pointed_probs, raw_reg = _score(X, artifact)
+
+    return {
+        "card_name":              display_name,
+        "already_pointed":        False,
+        "pointed_prob":           round(float(pointed_probs[0]) * 100, 1),
+        "est_points":             _snap_to_valid(raw_reg[0]),
+        "raw_points":             float(raw_reg[0]),
+        "has_tournament_history": has_history,
+        "mana_cost":              row_df.iloc[0].get("mana_cost"),
+        "type_line":              row_df.iloc[0].get("type_line"),
+        "oracle_text":            row_df.iloc[0].get("oracle_text"),
+        "rarity":                 row_df.iloc[0].get("rarity"),
+    }
 
 
 if __name__ == "__main__":
