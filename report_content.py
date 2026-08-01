@@ -197,6 +197,11 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     n_total = len(per_card)
     n_pointed = int((per_card["points"].notna() & (per_card["points"] > 0)).sum())
     n_unpointed = n_total - n_pointed
+    # F1 of a naive "flag every card as pointed" classifier: precision =
+    # base rate, recall = 1.0, so F1 = 2*base_rate/(1+base_rate), which
+    # simplifies to this — a more meaningful yardstick than an arbitrary
+    # fixed number under this ~40:1,584 imbalance (see AUPRC's note below).
+    naive_clf_f1 = (2 * n_pointed / (n_pointed + n_total)) if n_total else 0.0
 
     clf_results = artifact.get("clf_results", {})
     reg_results = artifact.get("reg_results", {})
@@ -269,6 +274,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
             ("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}"),
         ],
     )}
+    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}", "always flagging every card as pointed")}
     {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only — reads high under this imbalance")}
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
