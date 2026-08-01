@@ -10,12 +10,19 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OrdinalEncoder
 
 # Sentence transformer model — downloaded once and cached locally by the library
 _EMBEDDER: Optional[SentenceTransformer] = None
 EMBED_MODEL = "all-MiniLM-L6-v2"
+
+# TF-IDF over oracle text — "english" drops common stopwords (if, the, a, ...)
+# before vectorising. Capped vocabulary keeps dimensionality sane relative to
+# the (small) card dataset.
+TFIDF_MAX_FEATURES = 200
+TFIDF_MIN_DF = 2
 
 COLORS = ["W", "U", "B", "R", "G"]
 RARITY_ORDER = [["common", "uncommon", "rare", "mythic"]]
@@ -101,15 +108,23 @@ def _tag_keyword_string(row: pd.Series) -> str:
 # Main transform
 # ---------------------------------------------------------------------------
 
-def build_feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
+def build_feature_matrix(
+    df: pd.DataFrame,
+    tfidf_vectorizer: Optional[TfidfVectorizer] = None,
+) -> tuple[pd.DataFrame, TfidfVectorizer]:
     """Transforms the per-card dataframe into a numeric feature matrix.
 
     Args:
         df: Per-card aggregated dataframe from pipeline.aggregate_per_card().
+        tfidf_vectorizer: A vectorizer already fit on oracle text (e.g. at
+            training time). Pass this in at inference time so the oracle-text
+            vocabulary matches what the model was trained on. If None, a new
+            vectorizer is fit on `df`'s oracle text.
 
     Returns:
-        Feature matrix with one row per card, all-numeric columns.
-        Row order matches df.index.
+        Tuple of (feature matrix, the fitted TF-IDF vectorizer). The feature
+        matrix has one row per card, all-numeric columns, row order matching
+        df.index.
     """
     records = []
 
@@ -201,4 +216,24 @@ def build_feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
     
     embed_df = pd.concat([tags_df, keywords_df], axis=1)
 
-    return pd.concat([feat_df, embed_df], axis=1)
+    # TF-IDF over oracle (rules) text — stopwords pruned before vectorising.
+    oracle_text = df.get("oracle_text", pd.Series("", index=df.index))
+    oracle_text = oracle_text.fillna("").map(str)
+
+    if tfidf_vectorizer is None:
+        tfidf_vectorizer = TfidfVectorizer(
+            stop_words="english",
+            max_features=TFIDF_MAX_FEATURES,
+            min_df=TFIDF_MIN_DF,
+        )
+        tfidf_matrix = tfidf_vectorizer.fit_transform(oracle_text)
+    else:
+        tfidf_matrix = tfidf_vectorizer.transform(oracle_text)
+
+    tfidf_df = pd.DataFrame(
+        tfidf_matrix.toarray(),
+        index=df.index,
+        columns=[f"oracle_tfidf_{term}" for term in tfidf_vectorizer.get_feature_names_out()],
+    )
+
+    return pd.concat([feat_df, embed_df, tfidf_df], axis=1), tfidf_vectorizer
