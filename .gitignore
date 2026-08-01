@@ -19,3 +19,6 @@ __pycache__/
 !/app_data/chl_model.pkl
 !/app_data/chl_predictions.csv
 !/app_data/chl_card_pool.pkl
+
+# Streamlit Cloud needs this at repo root to install dependencies
+!/requirements.txt

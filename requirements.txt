@@ -1,0 +1,13 @@
+# Pinned to what the current data/chl_model.pkl was trained and pickled
+# with — scikit-learn especially should stay in lockstep with training,
+# since unpickling fitted estimators across versions can silently break.
+streamlit>=1.60
+pandas==3.0.1
+numpy==2.4.3
+requests==2.32.5
+scikit-learn==1.8.0
+lightgbm==4.6.0
+xgboost==3.2.0
+mord==0.7
+shap==0.51.0
+sentence-transformers==5.4.0
