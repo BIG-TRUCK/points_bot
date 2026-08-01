@@ -5,6 +5,7 @@ ready for model training or inference.
 """
 
 import re
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -32,6 +33,20 @@ REL_COLUMNS = [
     "references-to", "related-to", "similar-to", "with-body",
     "without-body", "worse-than",
 ]
+
+
+@dataclass
+class FeaturePreprocessors:
+    """Transformers fit once on the training set and reused at inference time.
+
+    Fitting these fresh on every build_feature_matrix() call (the original
+    behaviour) silently breaks on small batches: e.g. a single inference row
+    with a missing value has no other rows to compute a median from, so the
+    value stays NaN and crashes any model that can't handle NaN natively.
+    """
+    tfidf_vectorizer: TfidfVectorizer
+    imputer: SimpleImputer
+    rarity_encoder: OrdinalEncoder
 
 
 def _embedder() -> SentenceTransformer:
@@ -110,19 +125,21 @@ def _tag_keyword_string(row: pd.Series) -> str:
 
 def build_feature_matrix(
     df: pd.DataFrame,
-    tfidf_vectorizer: Optional[TfidfVectorizer] = None,
-) -> tuple[pd.DataFrame, TfidfVectorizer]:
+    preprocessors: Optional[FeaturePreprocessors] = None,
+) -> tuple[pd.DataFrame, FeaturePreprocessors]:
     """Transforms the per-card dataframe into a numeric feature matrix.
 
     Args:
         df: Per-card aggregated dataframe from pipeline.aggregate_per_card().
-        tfidf_vectorizer: A vectorizer already fit on oracle text (e.g. at
-            training time). Pass this in at inference time so the oracle-text
-            vocabulary matches what the model was trained on. If None, a new
-            vectorizer is fit on `df`'s oracle text.
+        preprocessors: Transformers already fit at training time (TF-IDF
+            vectorizer, median imputer, rarity encoder). Pass this in at
+            inference time — including for small batches / single-card
+            lookups — so vocabulary/statistics match training rather than
+            being refit (and potentially undefined) on whatever happens to
+            be in `df`. If None, fresh transformers are fit on `df`.
 
     Returns:
-        Tuple of (feature matrix, the fitted TF-IDF vectorizer). The feature
+        Tuple of (feature matrix, the fitted preprocessors). The feature
         matrix has one row per card, all-numeric columns, row order matching
         df.index.
     """
@@ -187,19 +204,36 @@ def build_feature_matrix(
 
     feat_df = pd.DataFrame(records, index=df.index)
 
-    # Impute numeric columns with median (fit on the data we have)
-    imputer = SimpleImputer(strategy="median")
-    feat_df[:] = imputer.fit_transform(feat_df)
+    imputer = preprocessors.imputer if preprocessors else SimpleImputer(strategy="median")
+    rarity_encoder = preprocessors.rarity_encoder if preprocessors else OrdinalEncoder(
+        categories=RARITY_ORDER, handle_unknown="use_encoded_value", unknown_value=-1
+    )
+
+    # Impute numeric columns with median (fit at training time, reused thereafter)
+    if preprocessors is None:
+        feat_df[:] = imputer.fit_transform(feat_df)
+    else:
+        feat_df[:] = imputer.transform(feat_df)
 
     # Rarity ordinal encode — join back by index
-    rarity_series = df["rarity"].fillna("common").map(lambda r: str(r) if r else "common")
-    enc = OrdinalEncoder(categories=RARITY_ORDER, handle_unknown="use_encoded_value", unknown_value=-1)
-    feat_df["rarity"] = enc.fit_transform(rarity_series.values.reshape(-1, 1))
+    # .to_numpy(dtype=object), not .values: pandas' pyarrow-backed string
+    # arrays (default in pandas >=3.0, and more likely to be active once
+    # pyarrow is already imported elsewhere in-process, e.g. by Streamlit)
+    # don't support .reshape().
+    rarity_series = df.get("rarity", pd.Series("common", index=df.index))
+    rarity_series = rarity_series.fillna("common").map(lambda r: str(r) if r else "common")
+    rarity_values = rarity_series.to_numpy(dtype=object).reshape(-1, 1)
+    if preprocessors is None:
+        feat_df["rarity"] = rarity_encoder.fit_transform(rarity_values)
+    else:
+        feat_df["rarity"] = rarity_encoder.transform(rarity_values)
 
     # Sentence-transformer embeddings for card_tags and keywords (separate)
-    tags = df.get("card_tags", []).apply(lambda x: " ".join(str(p) for p in (x or [])))
-    keywords = df.get("keywords", []).apply(lambda x: " ".join(str(p) for p in (x or [])))
-    
+    tags = df.get("card_tags", pd.Series([[]] * len(df), index=df.index))
+    keywords = df.get("keywords", pd.Series([[]] * len(df), index=df.index))
+    tags = tags.apply(lambda x: " ".join(str(p) for p in (x or [])))
+    keywords = keywords.apply(lambda x: " ".join(str(p) for p in (x or [])))
+
     tags_embeddings = _embedder().encode(tags.tolist(), show_progress_bar=True, batch_size=64)
     keywords_embeddings = _embedder().encode(keywords.tolist(), show_progress_bar=True, batch_size=64)
     
@@ -220,12 +254,12 @@ def build_feature_matrix(
     oracle_text = df.get("oracle_text", pd.Series("", index=df.index))
     oracle_text = oracle_text.fillna("").map(str)
 
-    if tfidf_vectorizer is None:
-        tfidf_vectorizer = TfidfVectorizer(
-            stop_words="english",
-            max_features=TFIDF_MAX_FEATURES,
-            min_df=TFIDF_MIN_DF,
-        )
+    tfidf_vectorizer = preprocessors.tfidf_vectorizer if preprocessors else TfidfVectorizer(
+        stop_words="english",
+        max_features=TFIDF_MAX_FEATURES,
+        min_df=TFIDF_MIN_DF,
+    )
+    if preprocessors is None:
         tfidf_matrix = tfidf_vectorizer.fit_transform(oracle_text)
     else:
         tfidf_matrix = tfidf_vectorizer.transform(oracle_text)
@@ -236,4 +270,11 @@ def build_feature_matrix(
         columns=[f"oracle_tfidf_{term}" for term in tfidf_vectorizer.get_feature_names_out()],
     )
 
-    return pd.concat([feat_df, embed_df, tfidf_df], axis=1), tfidf_vectorizer
+    if preprocessors is None:
+        preprocessors = FeaturePreprocessors(
+            tfidf_vectorizer=tfidf_vectorizer,
+            imputer=imputer,
+            rarity_encoder=rarity_encoder,
+        )
+
+    return pd.concat([feat_df, embed_df, tfidf_df], axis=1), preprocessors

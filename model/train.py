@@ -21,6 +21,13 @@ import pandas as pd
 import shap
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import LeaveOneOut
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, SVR
@@ -257,12 +264,46 @@ def run_loocv_regressor(X: pd.DataFrame, y: pd.Series, model_factory) -> dict:
 # SHAP
 # ---------------------------------------------------------------------------
 
-def compute_shap(model, X: pd.DataFrame) -> pd.DataFrame:
-    """Returns mean |SHAP| per feature for tree-based models."""
-    explainer = shap.TreeExplainer(model)
-    vals = explainer.shap_values(X)
+_FAST_SHAP_MODELS = (
+    lgb.LGBMClassifier, lgb.LGBMRegressor,
+    xgb.XGBClassifier, xgb.XGBRegressor,
+    LogisticRegression,
+)
+
+
+def compute_shap(model, X: pd.DataFrame, background: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Returns mean |SHAP| per feature for any of this project's model types.
+
+    Tree models (LightGBM/XGBoost) get the exact TreeExplainer. Logistic
+    Regression gets the exact LinearExplainer. Everything else (SVM,
+    OrdinalRidge) has no closed-form SHAP, so falls back to KernelExplainer
+    against a small k-means-summarized background — much slower, which is
+    why callers should keep `X` small for these (see _shap_subsample).
+    """
+    if isinstance(model, (lgb.LGBMClassifier, lgb.LGBMRegressor, xgb.XGBClassifier, xgb.XGBRegressor)):
+        explainer = shap.TreeExplainer(model)
+        vals = explainer.shap_values(X)
+    elif isinstance(model, LogisticRegression):
+        explainer = shap.LinearExplainer(model, background if background is not None else X)
+        vals = explainer.shap_values(X)
+    else:
+        # No closed-form SHAP for this model type (SVM, OrdinalRidge). nsamples
+        # is capped well below KernelExplainer's "auto" default (~2*n_features)
+        # — with ~1,000 features that default means thousands of model
+        # evaluations per explained row, which is far too slow for this to run
+        # as a routine part of training. This trades some SHAP precision for
+        # runtime; fine for an interpretability sidebar, not used by the model.
+        bg_source = background if background is not None else X
+        bg = shap.kmeans(bg_source, min(25, len(bg_source)))
+        predict_fn = model.predict_proba if hasattr(model, "predict_proba") else model.predict
+        explainer = shap.KernelExplainer(predict_fn, bg)
+        vals = explainer.shap_values(X, nsamples=200, silent=True)
+
     if isinstance(vals, list):
-        vals = vals[1]  # binary classifier returns [neg, pos]
+        vals = vals[1] if len(vals) > 1 else vals[0]  # binary classifier -> [neg, pos]
+    vals = np.asarray(vals)
+    if vals.ndim > 2:
+        vals = vals[:, :, -1]  # some explainers add a trailing output/class axis
     mean_abs = np.abs(vals).mean(axis=0)
     return (
         pd.Series(mean_abs, index=X.columns)
@@ -270,6 +311,22 @@ def compute_shap(model, X: pd.DataFrame) -> pd.DataFrame:
         .rename("mean_abs_shap")
         .to_frame()
     )
+
+
+def _shap_subsample(X: pd.DataFrame, y: pd.Series, model, max_rows: int) -> pd.DataFrame:
+    """Tree/Logistic models get exact, cheap explainers regardless of size;
+    everything else falls back to the much slower KernelExplainer, so those
+    are explained on a stratified subsample (all positives + a random sample
+    of negatives) rather than the full dataset."""
+    if isinstance(model, _FAST_SHAP_MODELS) or len(X) <= max_rows:
+        return X
+    rng = np.random.RandomState(42)
+    y_aligned = y.loc[X.index]
+    pos_idx = list(X.index[y_aligned == 1])
+    neg_pool = list(X.index[y_aligned == 0])
+    n_neg = max(max_rows - len(pos_idx), 0)
+    neg_idx = list(rng.choice(neg_pool, size=min(n_neg, len(neg_pool)), replace=False))
+    return X.loc[pos_idx + neg_idx]
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +343,7 @@ def main(data_path: str | None = None) -> None:
     logger.info(f"Pointed cards (stage 2 training set): {len(pointed)}")
 
     # Build feature matrices
-    X_all, tfidf_vectorizer = build_feature_matrix(df)
+    X_all, preprocessors = build_feature_matrix(df)
     X_pointed = X_all.loc[pointed.index]
     y_binary = pd.Series(
         (df["points"].fillna(0) > 0).astype(int).values,
@@ -337,6 +394,78 @@ def main(data_path: str | None = None) -> None:
         scaler = None
         final_clf.fit(X_all, y_binary)
 
+    # SHAP for every classifier candidate, not just the winner. Tree models
+    # and Logistic have exact explainers; SVM falls back to KernelExplainer,
+    # which is why it's explained on a stratified subsample rather than the
+    # full ~1,624-row dataset (see _shap_subsample).
+    SHAP_MAX_ROWS_SLOW = 60
+    logger.info("Computing SHAP for every classifier candidate...")
+    shap_importance_clf: dict[str, pd.DataFrame] = {}
+    for name, factory in clf_candidates:
+        if name == best_clf_name:
+            model, model_scaler = final_clf, scaler
+        else:
+            model = factory()
+            model_scaler = StandardScaler() if _needs_scaling(model) else None
+            if model_scaler is not None:
+                model.fit(model_scaler.fit_transform(X_all), y_binary)
+            else:
+                model.fit(X_all, y_binary)
+        X_c = X_all if model_scaler is None else pd.DataFrame(
+            model_scaler.transform(X_all), index=X_all.index, columns=X_all.columns
+        )
+        X_explain = _shap_subsample(X_c, y_binary, model, SHAP_MAX_ROWS_SLOW)
+        logger.info(f"  SHAP — {name} ({len(X_explain)} of {len(X_c)} rows)...")
+        shap_importance_clf[name] = compute_shap(model, X_explain)
+    print(f"\n--- Top 15 features by mean |SHAP| (classifier, {best_clf_name}) ---")
+    print(shap_importance_clf[best_clf_name].head(15).to_string())
+
+    # F1 / AUPRC (average precision): positives use their LOOCV-held-out
+    # probability (unbiased); negatives use the final model's in-sample
+    # probability, since full LOOCV over the ~1,584 unpointed cards was
+    # never run (see run_loocv_classifier — only positives are held out,
+    # given the class imbalance). So these numbers are a mildly optimistic
+    # upper bound on true held-out performance, not a strict estimate of it.
+    # AUPRC (not AUROC) is the headline ranking metric here since it's the
+    # one that doesn't get flattered by the ~40:1,584 class imbalance.
+    probs_all = final_clf.predict_proba(scaler.transform(X_all) if scaler is not None else X_all)[:, 1]
+    probs_for_eval = probs_all.copy()
+    row_index = {name: i for i, name in enumerate(y_binary.index)}
+    for name, held_out_prob in zip(best_clf_res["card_names"], best_clf_res["probs"]):
+        probs_for_eval[row_index[name]] = held_out_prob
+
+    auprc = average_precision_score(y_binary, probs_for_eval)
+    auroc = roc_auc_score(y_binary, probs_for_eval)
+    preds_at_half = (probs_for_eval >= 0.5).astype(int)
+
+    thresholds = np.linspace(0.01, 0.99, 99)
+    f1s = [f1_score(y_binary, (probs_for_eval >= t).astype(int), zero_division=0) for t in thresholds]
+    best_t_idx = int(np.argmax(f1s))
+
+    classifier_eval = {
+        "auprc": float(auprc),
+        "f1_at_0.5": float(f1_score(y_binary, preds_at_half, zero_division=0)),
+        "precision_at_0.5": float(precision_score(y_binary, preds_at_half, zero_division=0)),
+        "recall_at_0.5": float(recall_score(y_binary, preds_at_half, zero_division=0)),
+        "best_f1": float(f1s[best_t_idx]),
+        "best_f1_threshold": float(thresholds[best_t_idx]),
+        "auroc": float(auroc),  # supplementary — inflates easily under this class imbalance, prefer AUPRC
+        "note": (
+            "Positives (pointed cards) use LOOCV-held-out probabilities; negatives "
+            "(unpointed cards) use in-sample probabilities from the final model, "
+            "since full LOOCV over the unpointed cards wasn't run given the class "
+            "imbalance. Treat these as a mildly optimistic upper bound, not a "
+            "strict held-out estimate. AUPRC is the headline ranking metric — "
+            "AUROC is included for reference but reads misleadingly high under "
+            "~40:1,584 class imbalance."
+        ),
+    }
+    logger.info(
+        f"Classifier eval — AUPRC={auprc:.3f}  F1@0.5={classifier_eval['f1_at_0.5']:.3f}  "
+        f"best F1={classifier_eval['best_f1']:.3f} @ t={classifier_eval['best_f1_threshold']:.2f}  "
+        f"(AUROC={auroc:.3f})"
+    )
+
     # ------------------------------------------------------------------
     # Stage 2: Regressor LOOCV
     # ------------------------------------------------------------------
@@ -384,26 +513,43 @@ def main(data_path: str | None = None) -> None:
         reg_scaler = None
         final_reg.fit(X_pointed, y_points)
 
-    # SHAP (regressor only — most interpretable for point magnitude).
-    # TreeExplainer only supports tree-based models.
-    if isinstance(final_reg, (lgb.LGBMRegressor, xgb.XGBRegressor)):
-        shap_df = compute_shap(final_reg, X_pointed)
-        print("\n--- Top 20 features by mean |SHAP| (regressor) ---")
-        print(shap_df.head(20).to_string())
-    else:
-        shap_df = None
+    # SHAP for every regressor candidate. X_pointed is small (~40 rows), so
+    # no subsampling is needed even for the KernelExplainer fallback.
+    logger.info("Computing SHAP for every regressor candidate...")
+    shap_importance_reg: dict[str, pd.DataFrame] = {}
+    for name, factory in reg_candidates:
+        if name == best_reg_name:
+            model, model_scaler = final_reg, reg_scaler
+        else:
+            model = factory()
+            model_scaler = StandardScaler() if _needs_scaling(model) else None
+            if model_scaler is not None:
+                model.fit(model_scaler.fit_transform(X_pointed), y_points)
+            else:
+                model.fit(X_pointed, y_points)
+        X_c = X_pointed if model_scaler is None else pd.DataFrame(
+            model_scaler.transform(X_pointed), index=X_pointed.index, columns=X_pointed.columns
+        )
+        logger.info(f"  SHAP — {name}...")
+        shap_importance_reg[name] = compute_shap(model, X_c)
+    print(f"\n--- Top 15 features by mean |SHAP| (regressor, {best_reg_name}) ---")
+    print(shap_importance_reg[best_reg_name].head(15).to_string())
 
     artifact = {
         "classifier": final_clf,
         "classifier_scaler": scaler,
+        "classifier_eval": classifier_eval,
         "regressor": final_reg,
         "regressor_scaler": reg_scaler,
-        "tfidf_vectorizer": tfidf_vectorizer,
+        "preprocessors": preprocessors,
         "clf_results": clf_results,
         "reg_results": reg_results,
         "naive_baseline_mae": naive_mae,
         "feature_columns": list(X_all.columns),
-        "shap_importance": shap_df,
+        "shap_importance_clf": shap_importance_clf,
+        "shap_importance_reg": shap_importance_reg,
+        "best_clf_name": best_clf_name,
+        "best_reg_name": best_reg_name,
     }
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(artifact, f)

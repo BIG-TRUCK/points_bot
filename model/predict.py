@@ -51,6 +51,39 @@ def _load_per_card_df(path: str | None = None) -> pd.DataFrame:
         return pickle.load(f)
 
 
+def _score(X: pd.DataFrame, artifact: dict) -> tuple[np.ndarray, np.ndarray]:
+    """Applies the saved classifier + regressor (with their scalers, if any)
+    to an already-built, already-column-aligned feature matrix.
+
+    Returns:
+        (pointed_probs, raw_point_estimates) — same length as X.
+    """
+    clf = artifact["classifier"]
+    scaler: StandardScaler | None = artifact.get("classifier_scaler")
+    reg = artifact["regressor"]
+    reg_scaler: StandardScaler | None = artifact.get("regressor_scaler")
+
+    if scaler is not None:
+        pointed_probs = clf.predict_proba(scaler.transform(X))[:, 1]
+    else:
+        pointed_probs = clf.predict_proba(X)[:, 1]
+
+    if reg_scaler is not None:
+        raw_reg = reg.predict(reg_scaler.transform(X))
+    else:
+        raw_reg = reg.predict(X)
+
+    return pointed_probs, raw_reg
+
+
+def _align_columns(X: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    """Reindexes X to the training-time feature columns, zero-filling any that
+    are missing (e.g. a TF-IDF term never seen in this batch)."""
+    for col in set(feature_cols) - set(X.columns):
+        X[col] = 0.0
+    return X[feature_cols]
+
+
 def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> pd.DataFrame:
     logging.basicConfig(level=logging.INFO)
 
@@ -64,32 +97,13 @@ def main(data_path: str | None = None, review: bool = True, top_n: int = 30) -> 
     with open(MODEL_PATH, "rb") as f:
         artifact = pickle.load(f)
 
-    clf = artifact["classifier"]
-    scaler: StandardScaler | None = artifact.get("classifier_scaler")
-    reg = artifact["regressor"]
-    reg_scaler: StandardScaler | None = artifact.get("regressor_scaler")
     feature_cols = artifact["feature_columns"]
-    tfidf_vectorizer = artifact.get("tfidf_vectorizer")
+    preprocessors = artifact.get("preprocessors")
 
-    X, _ = build_feature_matrix(unlabeled, tfidf_vectorizer=tfidf_vectorizer)
+    X, _ = build_feature_matrix(unlabeled, preprocessors=preprocessors)
+    X = _align_columns(X, feature_cols)
 
-    # Align columns in case feature set has drifted
-    for col in set(feature_cols) - set(X.columns):
-        X[col] = 0.0
-    X = X[feature_cols]
-
-    # Stage 1 — classifier probabilities
-    if scaler is not None:
-        X_clf = scaler.transform(X)
-        pointed_probs = clf.predict_proba(X_clf)[:, 1]
-    else:
-        pointed_probs = clf.predict_proba(X)[:, 1]
-
-    # Stage 2 — point estimate (context only, not used for ranking)
-    if reg_scaler is not None:
-        raw_reg = reg.predict(reg_scaler.transform(X))
-    else:
-        raw_reg = reg.predict(X)
+    pointed_probs, raw_reg = _score(X, artifact)
     snapped = [_snap_to_valid(p) for p in raw_reg]
 
     results = pd.DataFrame({
