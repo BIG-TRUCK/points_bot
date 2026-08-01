@@ -184,8 +184,14 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
         "performance, so ratings for never-played cards are less reliable."
     )
 
-    card_name_input = st.text_input("Card name", placeholder="e.g. Sol Ring")
-    go = st.button("Score this card", type="primary")
+    # A bare st.text_input + st.button doesn't submit on Enter: pressing
+    # Enter reruns the script with the button's value reset to False (it
+    # only becomes True on the rerun where the button itself was clicked).
+    # st.form makes Enter-inside-the-form equivalent to clicking its submit
+    # button, so both paths work.
+    with st.form("score_card_form"):
+        card_name_input = st.text_input("Card name", placeholder="e.g. Sol Ring")
+        go = st.form_submit_button("Score this card", type="primary")
 
     if go and card_name_input.strip():
         with st.spinner(f"Scoring {card_name_input}..."):
