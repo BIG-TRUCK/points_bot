@@ -19,11 +19,14 @@ from sklearn.preprocessing import OrdinalEncoder
 _EMBEDDER: Optional[SentenceTransformer] = None
 EMBED_MODEL = "all-MiniLM-L6-v2"
 
-# TF-IDF over oracle text — "english" drops common stopwords (if, the, a, ...)
+# TF-IDF over oracle text - "english" drops common stopwords (if, the, a, ...)
 # before vectorising. Capped vocabulary keeps dimensionality sane relative to
-# the (small) card dataset.
+# the (small) card dataset. Unigrams through trigrams so phrase-level rules
+# text ("target creature" vs "target player") isn't flattened to the same
+# "target" token as everything else.
 TFIDF_MAX_FEATURES = 200
 TFIDF_MIN_DF = 2
+TFIDF_NGRAM_RANGE = (1, 3)
 
 COLORS = ["W", "U", "B", "R", "G"]
 RARITY_ORDER = [["common", "uncommon", "rare", "mythic"]]
@@ -249,6 +252,7 @@ def build_feature_matrix(
         stop_words="english",
         max_features=TFIDF_MAX_FEATURES,
         min_df=TFIDF_MIN_DF,
+        ngram_range=TFIDF_NGRAM_RANGE,
     )
     if preprocessors is None:
         tfidf_matrix = tfidf_vectorizer.fit_transform(oracle_text)
