@@ -108,7 +108,7 @@
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot - Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model - evaluation summary. Generated 2026-08-01 15:33 UTC.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model - evaluation summary. Generated 2026-08-01 15:35 UTC.</p>
   
   <h2 style="margin-top:0; border-top:none; padding-top:0;">Why</h2><ul class='readme-list'><li>I thought it would be fun</li><li>I wanted to see if the resulting model would accurate <em>at all</em> (my starting expectation was that this would be a total waste of time)</li><li>In a world where a good enough model for card power exists, points decisions would have less room for human bias</li><li>Magic is fun to think about.</li></ul><h2>The story so far</h2><ul class='readme-list'><li>Was originally going to do 7pt because it&#x27;s the cooler format, but tournament result postings are so sparse and unstructured it&#x27;d be too painful to gather enough data</li><li>Training on simple metadata and results alone was <strong>useless</strong></li><li>Scraping tags is a nightmare; every day I pray for an API</li><li>I am aware that edhrec is a Commander resource; it&#x27;s still 100-card singleton that some weirdos play competitively - some of their data should be useful</li><li>tag embeddings made a huge difference in model performance, hooray I can&#x27;t wait to rescrape them and have it take a million years because I need to render the whole damn web page for each card</li><li>Regressor attempts have been kind of a joke; not going to bother paying too much attention to them anymore. Nothing that&#x27;s unpointed right now is likely to ever be worth more than 1 point anyway.</li><li>Visualising pointed cards in 2d embedding space is neat</li><li>Surprised to see the classifier is semi-coherent; Wood Elves being a suspect is pretty damn funny though.</li><li>Putting all the oracle text through tf-idf might be a good idea.</li><li>It was a good idea</li><li>Would be nice to understand what the embedding features actually represent, reverse engineering them based on rank-order might help</li><li>I dunno why I&#x27;m generating an embedding from the keywords field; this could just be multi-hot instead</li><li>Actually, it&#x27;s kind of a pointless feature given only 3 of the pointed cards have it</li><li>Why am I not getting bigrams and trigrams when I do tf-idf???? idiot</li></ul>
   <section class="card">
@@ -126,19 +126,16 @@
       <div>
         <p><strong>Classifier candidates</strong></p>
         <ul class="candidates"><li><strong>LightGBM</strong> - mean rank pct 0.837<div class='params'>colsample_bytree=0.6, learning_rate=0.03, min_child_samples=2, n_estimators=600, num_leaves=31, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>XGBoost</strong> - mean rank pct 0.866 (winner)<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>Logistic</strong> - mean rank pct 0.785<div class='params'>C=0.3</div></li><li><strong>SVM</strong> - mean rank pct 0.771<div class='params'>C=1.0, gamma=0.001</div></li></ul>
+        <p class="muted"><strong>Mean rank pct</strong> - For each held-out pointed card, what
+          fraction of all cards it outranks by predicted probability, averaged across
+          every pointed card. 1.000 means a held-out card always ranked above every
+          unpointed card.</p>
       </div>
       <div>
         <p><strong>Regressor candidates</strong></p>
         <ul class="candidates"><li><strong>LightGBM</strong> - MAE 1.381<div class='params'>colsample_bytree=0.8, learning_rate=0.1, min_child_samples=2, n_estimators=200, num_leaves=15, reg_alpha=0.1, reg_lambda=0.5, subsample=1.0</div></li><li><strong>XGBoost</strong> - MAE 1.327<div class='params'>colsample_bytree=0.8, learning_rate=0.05, max_depth=3, min_child_weight=2, n_estimators=200, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>OrdinalRidge</strong> - MAE 1.000 (winner)<div class='params'>alpha=10.0</div></li><li><strong>SVM</strong> - MAE 1.032<div class='params'>C=0.1, epsilon=0.05, gamma=scale</div></li></ul>
       </div>
     </div>
-    <p class="muted">
-      Mean rank pct: for each held-out pointed card, what fraction of all cards it
-      outranks by predicted probability, averaged across every pointed card - 1.000
-      means a held-out card always ranked above every unpointed card. This is what
-      picks the classifier's winning candidate above (the regressor's winner is
-      picked by lowest MAE instead).
-    </p>
   </section>
 
   <h2>Classifier performance - XGBoost</h2>
@@ -245,7 +242,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:26.1%" title="tags_emb_206: 0.1917"></div></div>
           <div class="bar-value">0.192</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition engine</span><span class="emb-neg">&#8595; counter fuel-energy, energy generator, remove counters-player, restock-to-top</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition</span><span class="emb-neg">&#8595; counter fuel-energy, remove counters-player, energy generator, restock-to-top</span></div>
         <div class="bar-row">
           <div class="bar-label" title="color_U">color_U</div>
           <div class="bar-track"><div class="bar-fill" style="width:24.9%" title="color_U: 0.1833"></div></div>
@@ -263,13 +260,13 @@
           <div class="bar-track"><div class="bar-fill" style="width:19.5%" title="tags_emb_98: 0.1432"></div></div>
           <div class="bar-value">0.143</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-block-bfz-creatureland, cycle-shm-filterland, cycle-dual-creatureland, cycle-zendikar-creatureland</span><span class="emb-neg">&#8595; delayed cantrip, miniwheel, french vanilla equipment, hellbent</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-block-bfz-creatureland, cycle-shm-filterland, cycle-zendikar-creatureland, cycle-dual-creatureland</span><span class="emb-neg">&#8595; delayed cantrip, miniwheel, french vanilla equipment, hellbent</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_60">tags_emb_60</div>
           <div class="bar-track"><div class="bar-fill" style="width:15.5%" title="tags_emb_60: 0.1137"></div></div>
           <div class="bar-value">0.114</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, cycle-mh2-bridge, cycle-eve-filterland, cycle-horizon-land</span><span class="emb-neg">&#8595; typal-goblin, precognition, precognition engine, hate-multicolor</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, cycle-mh2-bridge, cycle-eve-filterland, cycle-horizon-land</span><span class="emb-neg">&#8595; typal-goblin, precognition engine, precognition, hate-multicolor</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_167">tags_emb_167</div>
           <div class="bar-track"><div class="bar-fill" style="width:15.1%" title="tags_emb_167: 0.1110"></div></div>
@@ -327,13 +324,13 @@
           <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_339: 0.2131"></div></div>
           <div class="bar-value">0.213</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; crucible of worlds, cycle-snc-triland, shardland, shockland</span><span class="emb-neg">&#8595; pseudo-hexproof, exalted, synergy-solo-attack, silence</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; crucible of worlds, shardland, cycle-snc-triland, shockland</span><span class="emb-neg">&#8595; pseudo-hexproof, exalted, synergy-solo-attack, silence</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
           <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_206: 0.2128"></div></div>
           <div class="bar-value">0.213</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition engine</span><span class="emb-neg">&#8595; counter fuel-energy, energy generator, remove counters-player, restock-to-top</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition</span><span class="emb-neg">&#8595; counter fuel-energy, remove counters-player, energy generator, restock-to-top</span></div>
         <div class="bar-row">
           <div class="bar-label" title="color_U">color_U</div>
           <div class="bar-track"><div class="bar-fill" style="width:13.8%" title="color_U: 0.2023"></div></div>
@@ -445,7 +442,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:55.1%" title="tags_emb_38: 0.2081"></div></div>
           <div class="bar-value">0.208</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; temporary token, token versions of cards, typal-goblin, copy-creature</span><span class="emb-neg">&#8595; earthquake, voting, cycle-1mv-tutor, cycle-bfz-tangoland</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; temporary token, token versions of cards, typal-goblin, copy-creature</span><span class="emb-neg">&#8595; earthquake, voting, cycle-1mv-tutor, cycle-tangoland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_318">tags_emb_318</div>
           <div class="bar-track"><div class="bar-fill" style="width:55.1%" title="tags_emb_318: 0.2079"></div></div>
@@ -475,7 +472,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:49.9%" title="tags_emb_284: 0.1882"></div></div>
           <div class="bar-value">0.188</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-tangoland, cycle-bfz-tangoland, synergy-basic, synergy-token</span><span class="emb-neg">&#8595; type addition noble, typal-choose, mirrored knight, pseudo-hexproof</span></div></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-bfz-tangoland, cycle-tangoland, synergy-basic, synergy-token</span><span class="emb-neg">&#8595; type addition noble, typal-choose, mirrored knight, pseudo-hexproof</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">SVM</p>
@@ -612,7 +609,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:16.0%" title="tags_emb_3: 0.0820"></div></div>
           <div class="bar-value">0.082</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; forced attacker, remove counters-player, energy generator, counter fuel-energy</span><span class="emb-neg">&#8595; shardland, cycle-snc-triland, cycle-triland, tricycle-land</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; forced attacker, energy generator, remove counters-player, counter fuel-energy</span><span class="emb-neg">&#8595; cycle-snc-triland, shardland, tricycle-land, cycle-triland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
           <div class="bar-track"><div class="bar-fill" style="width:15.6%" title="tags_emb_21: 0.0800"></div></div>
@@ -624,7 +621,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:13.2%" title="tags_emb_195: 0.0677"></div></div>
           <div class="bar-value">0.068</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, gives skulk</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, the ring tempts you</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_72">tags_emb_72</div>
           <div class="bar-track"><div class="bar-fill" style="width:7.1%" title="tags_emb_72: 0.0365"></div></div>
@@ -688,7 +685,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:32.3%" title="tags_emb_66: 0.1056"></div></div>
           <div class="bar-value">0.106</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; wheel-symmetrical, wheel, miniwheel, delayed cantrip</span><span class="emb-neg">&#8595; cycle-bfz-tangoland, cycle-tangoland, cycle-isd-checkland, cycle-checkland</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; wheel-symmetrical, wheel, miniwheel, delayed cantrip</span><span class="emb-neg">&#8595; cycle-tangoland, cycle-bfz-tangoland, cycle-isd-checkland, cycle-checkland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
           <div class="bar-track"><div class="bar-fill" style="width:26.6%" title="oracle_tfidf_add: 0.0868"></div></div>
@@ -712,7 +709,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:14.9%" title="tags_emb_255: 0.0487"></div></div>
           <div class="bar-value">0.049</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; prevent activation, null rod, hate-activation, hate-artifact</span><span class="emb-neg">&#8595; cycle-zen-fetchland, cycle-nonmana-land, cycle-fetchland, cycle-ons-fetchland</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; prevent activation, null rod, hate-activation, hate-artifact</span><span class="emb-neg">&#8595; cycle-zen-fetchland, cycle-fetchland, cycle-nonmana-land, cycle-ons-fetchland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_36">tags_emb_36</div>
           <div class="bar-track"><div class="bar-fill" style="width:14.9%" title="tags_emb_36: 0.0485"></div></div>
@@ -748,7 +745,7 @@
           <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="tags_emb_195: 0.0335"></div></div>
           <div class="bar-value">0.034</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, gives skulk</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, the ring tempts you</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_144">tags_emb_144</div>
           <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_144: 0.0325"></div></div>
@@ -912,13 +909,13 @@
           <div class="bar-track"><div class="bar-fill" style="width:61.5%" title="tags_emb_202: 0.0010"></div></div>
           <div class="bar-value">0.001</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-shm-filterland, cycle-lea-moxen, cycle-snc-triland, shardland</span><span class="emb-neg">&#8595; leveler, fog, damage prevention-you, birthing pod</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-shm-filterland, cycle-lea-moxen, shardland, cycle-snc-triland</span><span class="emb-neg">&#8595; leveler, fog, damage prevention-you, birthing pod</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_351">tags_emb_351</div>
           <div class="bar-track"><div class="bar-fill" style="width:59.7%" title="tags_emb_351: 0.0010"></div></div>
           <div class="bar-value">0.001</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; flicker, flicker-creature, flicker-enchantment, flicker-planeswalker</span><span class="emb-neg">&#8595; cycle-block-ths-scry-land, cycle-jou-scry-land, cycle-clb-adventurer, cycle-ons-fetchland</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; flicker-creature, flicker, flicker-enchantment, flicker-planeswalker</span><span class="emb-neg">&#8595; cycle-block-ths-scry-land, cycle-jou-scry-land, cycle-clb-adventurer, cycle-ons-fetchland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
           <div class="bar-track"><div class="bar-fill" style="width:58.3%" title="tags_emb_21: 0.0009"></div></div>
@@ -930,13 +927,13 @@
           <div class="bar-track"><div class="bar-fill" style="width:56.6%" title="tags_emb_1: 0.0009"></div></div>
           <div class="bar-value">0.001</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; opponent lifegain, hate-lifegain, forced attacker, one-sided fight</span><span class="emb-neg">&#8595; counterspell-sorcery, cycle-bfz-tangoland, cycle-tangoland, counterspell-ability</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; opponent lifegain, hate-lifegain, forced attacker, one-sided fight</span><span class="emb-neg">&#8595; counterspell-sorcery, cycle-tangoland, cycle-bfz-tangoland, counterspell-ability</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_88">tags_emb_88</div>
           <div class="bar-track"><div class="bar-fill" style="width:55.9%" title="tags_emb_88: 0.0009"></div></div>
           <div class="bar-value">0.001</div>
         </div>
-        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-zen-fetchland, cycle-fetchland, cycle-nonmana-land, cycle-ons-fetchland</span><span class="emb-neg">&#8595; typal-human, gives pp counters to all, typal-choose, flicker-planeswalker</span></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-zen-fetchland, cycle-nonmana-land, cycle-fetchland, cycle-ons-fetchland</span><span class="emb-neg">&#8595; typal-human, gives pp counters to all, typal-choose, flicker-planeswalker</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_205">tags_emb_205</div>
           <div class="bar-track"><div class="bar-fill" style="width:55.0%" title="tags_emb_205: 0.0009"></div></div>

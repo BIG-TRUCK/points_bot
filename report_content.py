@@ -371,19 +371,16 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
       <div>
         <p><strong>Classifier candidates</strong></p>
         <ul class="candidates">{clf_candidates_html}</ul>
+        <p class="muted"><strong>Mean rank pct</strong> - For each held-out pointed card, what
+          fraction of all cards it outranks by predicted probability, averaged across
+          every pointed card. 1.000 means a held-out card always ranked above every
+          unpointed card.</p>
       </div>
       <div>
         <p><strong>Regressor candidates</strong></p>
         <ul class="candidates">{reg_candidates_html}</ul>
       </div>
     </div>
-    <p class="muted">
-      Mean rank pct: for each held-out pointed card, what fraction of all cards it
-      outranks by predicted probability, averaged across every pointed card - 1.000
-      means a held-out card always ranked above every unpointed card. This is what
-      picks the classifier's winning candidate above (the regressor's winner is
-      picked by lowest MAE instead).
-    </p>
   </section>
 
   <h2>Classifier performance - {_esc(best_clf_name)}</h2>
