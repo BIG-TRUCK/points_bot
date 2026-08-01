@@ -22,3 +22,20 @@ __pycache__/
 
 # Streamlit Cloud needs this at repo root to install dependencies
 !/requirements.txt
+
+# .* above excludes the whole .streamlit/ directory, and git can't
+# re-include a file inside an excluded directory by negating just the file
+# (same reason app_data/ exists as its own top-level dir instead of living
+# under /data) — so un-ignore the directory itself, then re-exclude only
+# the actual secret.
+!/.streamlit/
+/.streamlit/secrets.toml
+
+# config.toml (not a secret) disables Streamlit's local file watcher, which
+# otherwise floods the console with "No module named 'torchvision'"
+# warnings. transformers (a sentence-transformers dependency) registers
+# dozens of lazy vision-model submodules that need torchvision; the
+# watcher's module-path introspection touches every loaded module and
+# triggers their lazy import on every rerun. Harmless (caught + logged),
+# but noisy. See app_session.py:183 — this config fully skips creating the
+# watcher, so the probe never runs.
