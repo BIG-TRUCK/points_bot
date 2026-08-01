@@ -1,4 +1,4 @@
-"""Shared HTML for the model report — used by both:
+"""Shared HTML for the model report - used by both:
   - scripts/build_report.py, which wraps this in a full page for the static
     GitHub Pages report (docs/index.html)
   - streamlit_app.py, which embeds it as the app's landing page
@@ -17,7 +17,7 @@ from model.embedding_probe import probe_dimension
 TOP_N_SUSPECTS = 15
 TOP_N_SHAP = 15
 
-# Scoped to .viz-root and its descendants — no `body` selector, since the
+# Scoped to .viz-root and its descendants - no `body` selector, since the
 # Streamlit embedding doesn't control the actual <body> tag.
 REPORT_CSS = """<style>
   .viz-root {
@@ -120,7 +120,7 @@ def _esc(value) -> str:
 
 def _embedding_probe_html(feature_name: str, per_card: "Optional[pd.DataFrame]") -> str:
     """For a tags_emb_*/keywords_emb_* SHAP feature, a compact caption of
-    which real card tags associate with high/low values on that dimension —
+    which real card tags associate with high/low values on that dimension -
     see model/embedding_probe.py. Empty string for any other feature, or if
     per_card wasn't supplied."""
     if per_card is None:
@@ -145,9 +145,9 @@ def _bar_chart_html(
     series: "Optional[pd.Series]", empty_note: str, per_card: "Optional[pd.DataFrame]" = None
 ) -> str:
     """Renders a horizontal bar chart (mean |SHAP|, single sequential hue)
-    as plain HTML/CSS — no JS required. For tags_emb_*/keywords_emb_*
+    as plain HTML/CSS - no JS required. For tags_emb_*/keywords_emb_*
     features, adds a caption of the real tags that dimension correlates
-    with (see _embedding_probe_html) — those dimensions have no inherent
+    with (see _embedding_probe_html) - those dimensions have no inherent
     meaning the way a TF-IDF or structured-attribute feature name does."""
     if series is None or series.empty:
         return f'<p class="muted">{_esc(empty_note)}</p>'
@@ -173,7 +173,7 @@ def _shap_section_html(
     stage_label: str,
     per_card: "Optional[pd.DataFrame]" = None,
 ) -> str:
-    """Renders one SHAP panel per candidate model, in a responsive grid —
+    """Renders one SHAP panel per candidate model, in a responsive grid -
     every candidate gets a chart, not just the stage's winner."""
     if not shap_by_model:
         return f'<p class="muted">No SHAP data available for the {_esc(stage_label)} stage.</p>'
@@ -230,8 +230,8 @@ def _stat_tile(label: str, value: str, note: str = "", subs: "Optional[list[tupl
 
 
 def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: pd.DataFrame) -> str:
-    """Returns the report body — "What's evaluated" through the top-suspects
-    table — with no page-level title, CSS, or footer, so callers can wrap it
+    """Returns the report body - "What's evaluated" through the top-suspects
+    table - with no page-level title, CSS, or footer, so callers can wrap it
     however suits their context (standalone page vs. embedded landing page).
     """
     n_total = len(per_card)
@@ -239,7 +239,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     n_unpointed = n_total - n_pointed
     # F1 of a naive "flag every card as pointed" classifier: precision =
     # base rate, recall = 1.0, so F1 = 2*base_rate/(1+base_rate), which
-    # simplifies to this — a more meaningful yardstick than an arbitrary
+    # simplifies to this - a more meaningful yardstick than an arbitrary
     # fixed number under this ~40:1,584 imbalance (see AUPRC's note below).
     naive_clf_f1 = (2 * n_pointed / (n_pointed + n_total)) if n_total else 0.0
 
@@ -254,7 +254,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     reg_tuned_params = artifact.get("reg_tuned_params", {})
 
     clf_candidates_html = "".join(
-        f"<li><strong>{_esc(name)}</strong> — mean rank pct {res['mean_rank_pct']:.3f}"
+        f"<li><strong>{_esc(name)}</strong> - mean rank pct {res['mean_rank_pct']:.3f}"
         f"{' (winner)' if name == best_clf_name else ''}"
         + (
             f"<div class='params'>{_esc(_format_params(params))}</div>"
@@ -265,7 +265,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
         for name, res in clf_results.items()
     )
     reg_candidates_html = "".join(
-        f"<li><strong>{_esc(name)}</strong> — MAE {res['mae']:.3f}"
+        f"<li><strong>{_esc(name)}</strong> - MAE {res['mae']:.3f}"
         f"{' (winner)' if name == best_reg_name else ''}"
         + (
             f"<div class='params'>{_esc(_format_params(params))}</div>"
@@ -287,7 +287,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
     <p>
-      <strong>{n_total:,}</strong> unique cards tracked from CHL tournament decklists —
+      <strong>{n_total:,}</strong> unique cards tracked from CHL tournament decklists -
       <strong>{n_pointed}</strong> currently pointed, <strong>{n_unpointed:,}</strong> unlabeled.
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
@@ -307,9 +307,9 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     </div>
   </section>
 
-  <h2>Classifier performance — {_esc(best_clf_name)}</h2>
+  <h2>Classifier performance - {_esc(best_clf_name)}</h2>
   <div class="stat-grid">
-    {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}", "headline metric — robust to the ~40:1,584 class imbalance")}
+    {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}")}
     {_stat_tile(
         "Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}",
         subs=[
@@ -318,22 +318,22 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
             ("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}"),
         ],
     )}
-    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}", "always flagging every card as pointed")}
-    {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only — reads high under this imbalance")}
+    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}")}
+    {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only - data too imbalanced for this to be meaningful")}
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
 
-  <h2>Regressor performance — {_esc(best_reg_name)}</h2>
+  <h2>Regressor performance - {_esc(best_reg_name)}</h2>
   <div class="stat-grid">
-    {_stat_tile("MAE (points)", f"{reg_mae:.3f}" if reg_mae is not None else "—")}
-    {_stat_tile("Naive baseline MAE", f"{naive_mae:.3f}" if naive_mae is not None else "—", "always predicting the mode")}
+    {_stat_tile("MAE (points)", f"{reg_mae:.3f}" if reg_mae is not None else "-")}
+    {_stat_tile("Naive baseline MAE", f"{naive_mae:.3f}" if naive_mae is not None else "-")}
   </div>
 
-  <h2>Feature importance (mean |SHAP|) — classifier</h2>
-  <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact. For tags_emb_*/keywords_emb_* features (a dimension has no inherent meaning the way a word or attribute name does), &#8593;/&#8595; show which real card tags average highest/lowest on that dimension — empirical, not an exact label.</p>
+  <h2>Feature importance (mean |SHAP|) - classifier</h2>
+  <p class="muted">SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample (treat those as directional only). For tags_emb_*/keywords_emb_* features, &#8593;/&#8595; show which real card tags average highest/lowest on that dimension</p>
   {shap_clf_html}
 
-  <h2>Feature importance (mean |SHAP|) — regressor</h2>
+  <h2>Feature importance (mean |SHAP|) - regressor</h2>
   {shap_reg_html}
 
   <h2>Top {TOP_N_SUSPECTS} suspects</h2>
