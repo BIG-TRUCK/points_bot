@@ -70,6 +70,7 @@ REPORT_CSS = """<style>
   .viz-root .stat-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
   .viz-root ul.candidates { margin: 0; padding-left: 20px; color: var(--text-secondary); }
   .viz-root ul.candidates li { margin: 4px 0; }
+  .viz-root ul.candidates .params { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
   .viz-root .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 720px) { .viz-root .two-col { grid-template-columns: 1fr; } }
   .viz-root .shap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -161,6 +162,10 @@ def _suspects_table_html(df: pd.DataFrame, top_n: int) -> str:
     return "".join(rows)
 
 
+def _format_params(params: dict) -> str:
+    return ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
+
+
 def _stat_tile(label: str, value: str, note: str = "") -> str:
     note_html = f'<div class="stat-note">{_esc(note)}</div>' if note else ""
     return f"""
@@ -187,15 +192,29 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     clf_eval = artifact.get("classifier_eval", {})
     naive_mae = artifact.get("naive_baseline_mae")
     reg_mae = reg_results.get(best_reg_name, {}).get("mae")
+    clf_tuned_params = artifact.get("clf_tuned_params", {})
+    reg_tuned_params = artifact.get("reg_tuned_params", {})
 
     clf_candidates_html = "".join(
         f"<li><strong>{_esc(name)}</strong> — mean rank pct {res['mean_rank_pct']:.3f}"
-        f"{' (winner)' if name == best_clf_name else ''}</li>"
+        f"{' (winner)' if name == best_clf_name else ''}"
+        + (
+            f"<div class='params'>{_esc(_format_params(params))}</div>"
+            if (params := clf_tuned_params.get(name))
+            else ""
+        )
+        + "</li>"
         for name, res in clf_results.items()
     )
     reg_candidates_html = "".join(
         f"<li><strong>{_esc(name)}</strong> — MAE {res['mae']:.3f}"
-        f"{' (winner)' if name == best_reg_name else ''}</li>"
+        f"{' (winner)' if name == best_reg_name else ''}"
+        + (
+            f"<div class='params'>{_esc(_format_params(params))}</div>"
+            if (params := reg_tuned_params.get(name))
+            else ""
+        )
+        + "</li>"
         for name, res in reg_results.items()
     )
 
@@ -211,7 +230,8 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
       pointed cards. Both stages pick the best of several candidate models via
-      leave-one-out cross-validation.
+      leave-one-out cross-validation; each candidate's hyperparameters (shown below it)
+      come from a small random search on a cheaper K-fold split beforehand.
     </p>
     <div class="two-col">
       <div>

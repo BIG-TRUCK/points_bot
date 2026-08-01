@@ -57,6 +57,7 @@
   .viz-root .stat-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
   .viz-root ul.candidates { margin: 0; padding-left: 20px; color: var(--text-secondary); }
   .viz-root ul.candidates li { margin: 4px 0; }
+  .viz-root ul.candidates .params { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
   .viz-root .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 720px) { .viz-root .two-col { grid-template-columns: 1fr; } }
   .viz-root .shap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -97,7 +98,7 @@
 <body class="viz-root">
 <main>
   <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:27 UTC.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:37 UTC.</p>
   
   <section class="card">
     <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
@@ -107,16 +108,17 @@
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
       pointed cards. Both stages pick the best of several candidate models via
-      leave-one-out cross-validation.
+      leave-one-out cross-validation; each candidate's hyperparameters (shown below it)
+      come from a small random search on a cheaper K-fold split beforehand.
     </p>
     <div class="two-col">
       <div>
         <p><strong>Classifier candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — mean rank pct 0.847</li><li><strong>XGBoost</strong> — mean rank pct 0.865 (winner)</li><li><strong>Logistic</strong> — mean rank pct 0.839</li><li><strong>SVM</strong> — mean rank pct 0.777</li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> — mean rank pct 0.847<div class='params'>colsample_bytree=0.6, learning_rate=0.03, min_child_samples=2, n_estimators=600, num_leaves=31, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>XGBoost</strong> — mean rank pct 0.865 (winner)<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>Logistic</strong> — mean rank pct 0.839<div class='params'>C=0.03</div></li><li><strong>SVM</strong> — mean rank pct 0.777<div class='params'>C=3.0, gamma=auto</div></li></ul>
       </div>
       <div>
         <p><strong>Regressor candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — MAE 1.369</li><li><strong>XGBoost</strong> — MAE 1.251</li><li><strong>OrdinalRidge</strong> — MAE 0.975 (winner)</li><li><strong>SVM</strong> — MAE 1.012</li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> — MAE 1.369<div class='params'>colsample_bytree=0.6, learning_rate=0.05, min_child_samples=1, n_estimators=400, num_leaves=15, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>XGBoost</strong> — MAE 1.251<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>OrdinalRidge</strong> — MAE 0.975 (winner)<div class='params'>alpha=10.0</div></li><li><strong>SVM</strong> — MAE 1.012<div class='params'>C=1.0, epsilon=0.1, gamma=scale</div></li></ul>
       </div>
     </div>
   </section>
