@@ -8,6 +8,7 @@ each caller only supplies its own page-level chrome (title, footer, nav).
 """
 
 import html
+import re
 from typing import Optional
 
 import pandas as pd
@@ -16,6 +17,7 @@ from model.embedding_probe import probe_dimension
 
 TOP_N_SUSPECTS = 15
 TOP_N_SHAP = 15
+README_PATH = "README.MD"
 
 # Scoped to .viz-root and its descendants - no `body` selector, since the
 # Streamlit embedding doesn't control the actual <body> tag.
@@ -111,11 +113,69 @@ REPORT_CSS = """<style>
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
+  .viz-root ul.readme-list { margin: 0 0 8px; padding-left: 22px; color: var(--text-secondary); }
+  .viz-root ul.readme-list li { margin: 6px 0; line-height: 1.5; }
 </style>"""
 
 
 def _esc(value) -> str:
     return html.escape(str(value)) if value is not None else ""
+
+
+def _render_inline_markdown(text: str) -> str:
+    """Escapes text, then converts the handful of inline markers actually
+    used in README.MD's bullets (**bold**, *italic*) to HTML. Not a general
+    markdown renderer - just enough for a dev-log's worth of emphasis."""
+    escaped = _esc(text)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<em>\1</em>", escaped)
+    return escaped
+
+
+def _parse_readme_sections(path: str = README_PATH) -> "list[tuple[str, list[str]]]":
+    """Parses '### Heading' sections followed by '- bullet' lines out of the
+    project README - e.g. its "Why" and "The story so far" dev-log sections -
+    into (heading, [bullet, ...]) pairs. Anything before the first ###
+    section (the title/intro line, already covered by the page's own
+    framing) is skipped, as is non-bullet prose within a section.
+
+    Returns [] if the README is missing or has no ### sections, so callers
+    can render nothing rather than error - this is presentation, not a
+    required data source.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return []
+
+    sections: list[tuple[str, list[str]]] = []
+    heading: Optional[str] = None
+    bullets: list[str] = []
+    for line in text.splitlines():
+        heading_match = re.match(r"^###\s+(.+?)\s*$", line)
+        if heading_match:
+            if heading is not None:
+                sections.append((heading, bullets))
+            heading, bullets = heading_match.group(1), []
+            continue
+        bullet_match = re.match(r"^-\s+(.+?)\s*$", line)
+        if bullet_match and heading is not None:
+            bullets.append(bullet_match.group(1))
+    if heading is not None:
+        sections.append((heading, bullets))
+    return sections
+
+
+def _readme_sections_html(path: str = README_PATH) -> str:
+    parts = []
+    for i, (heading, bullets) in enumerate(_parse_readme_sections(path)):
+        if not bullets:
+            continue
+        no_top_margin = ' style="margin-top:0; border-top:none; padding-top:0;"' if i == 0 else ""
+        items = "".join(f"<li>{_render_inline_markdown(b)}</li>" for b in bullets)
+        parts.append(f"<h2{no_top_margin}>{_esc(heading)}</h2><ul class='readme-list'>{items}</ul>")
+    return "".join(parts)
 
 
 def _embedding_probe_html(feature_name: str, per_card: "Optional[pd.DataFrame]") -> str:
@@ -283,9 +343,21 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
         artifact.get("shap_importance_reg"), best_reg_name, "regressor", per_card=per_card
     )
 
+    readme_html = _readme_sections_html()
+    # Whichever section actually renders first gets the top-margin/border
+    # reset (.viz-root h2 otherwise always draws a separator line above
+    # itself) - that's the README sections when present, "What's evaluated"
+    # otherwise.
+    whats_evaluated_h2 = (
+        "<h2>What's evaluated</h2>"
+        if readme_html
+        else '<h2 style="margin-top:0; border-top:none; padding-top:0;">What\'s evaluated</h2>'
+    )
+
     return f"""
+  {readme_html}
   <section class="card">
-    <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
+    {whats_evaluated_h2}
     <p>
       <strong>{n_total:,}</strong> unique cards tracked from CHL tournament decklists -
       <strong>{n_pointed}</strong> currently pointed, <strong>{n_unpointed:,}</strong> unlabeled.
