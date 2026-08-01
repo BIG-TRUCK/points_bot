@@ -12,3 +12,10 @@ __pycache__/
 /.godot/
 !/.gitignore
 !/.gitattributes
+
+# Small snapshot bundled with the Streamlit app (scripts/export_app_data.py) —
+# unlike /data this is meant to be committed so Streamlit Cloud has something
+# to deploy from.
+!/app_data/chl_model.pkl
+!/app_data/chl_predictions.csv
+!/app_data/chl_card_pool.pkl
