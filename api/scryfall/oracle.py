@@ -1,3 +1,6 @@
+import gzip
+import io
+import json
 import logging
 import requests
 import pandas as pd
@@ -26,6 +29,10 @@ def fetch_latest_bulk_data_uuid() -> Optional[str]:
 def fetch_bulk_data(uuid: str) -> List[Dict[str, Any]]:
     """Fetches the bulk data for the given UUID from Scryfall API.
 
+    Scryfall bulk-data items expose a plain-JSON `download_uri` and/or a
+    gzip-compressed JSON-Lines `jsonl_download_uri`; newer entries only offer
+    the latter, so both are handled here.
+
     Args:
         uuid (str): The UUID of the bulk data to fetch.
 
@@ -35,10 +42,14 @@ def fetch_bulk_data(uuid: str) -> List[Dict[str, Any]]:
     url: str = f'https://api.scryfall.com/bulk-data/{uuid}'
     response: requests.Response = requests.get(url, headers={'User-Agent': 'BIGTRUCKPointsBot/1.0'})
     data = response.json()
-    dl_uri = data['download_uri']
-    dl_response: requests.Response = requests.get(dl_uri, headers={'User-Agent': 'BIGTRUCKPointsBot/1.0'})
 
-    return dl_response.json()
+    if 'download_uri' in data:
+        dl_response: requests.Response = requests.get(data['download_uri'], headers={'User-Agent': 'BIGTRUCKPointsBot/1.0'})
+        return dl_response.json()
+
+    dl_response = requests.get(data['jsonl_download_uri'], headers={'User-Agent': 'BIGTRUCKPointsBot/1.0'})
+    with gzip.GzipFile(fileobj=io.BytesIO(dl_response.content)) as gz:
+        return [json.loads(line) for line in gz if line.strip()]
 
 def build_dataframe(cards: List[Dict[str, Any]]) -> pd.DataFrame:
     """Builds a pandas DataFrame from the list of card dictionaries.
