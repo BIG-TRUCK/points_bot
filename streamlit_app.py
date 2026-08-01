@@ -83,7 +83,7 @@ def load_model_artifact() -> dict:
 def feedback_widget(card_name: str, predicted_points, pointed_prob, key_prefix: str) -> None:
     state_key = f"{key_prefix}_submitted"
     if st.session_state.get(state_key):
-        st.success("Feedback submitted — thank you!")
+        st.success("Feedback submitted - thank you!")
         return
 
     if not feedback_configured():
@@ -191,7 +191,7 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
     st.write(
         "Type a card name to get the model's live rating. Cards that have "
         "never appeared in a CHL tournament decklist are scored from their "
-        "printed properties alone — the model leans heavily on tournament "
+        "printed properties alone - the model leans heavily on tournament "
         "performance, so ratings for never-played cards are less reliable."
     )
 
@@ -210,7 +210,7 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
 
         if result is None:
             st.error(
-                f"Couldn't find '{card_name_input}' — check the spelling "
+                f"Couldn't find '{card_name_input}' - check the spelling "
                 "(Scryfall fuzzy-matches, but it still needs to be a real card)."
             )
         else:
@@ -229,7 +229,7 @@ def render_score(card_pool_df: pd.DataFrame) -> None:
 
                 if not result["has_tournament_history"]:
                     st.warning(
-                        "This card has no CHL tournament history — rating is based "
+                        "This card has no CHL tournament history - rating is based "
                         "on card properties + oracle text only."
                     )
 
@@ -257,7 +257,7 @@ def render_landing(artifact: dict, predictions_df: pd.DataFrame, card_pool_df: p
     sections_html = render_report_sections(artifact, predictions_df, card_pool_df)
     body = f"""{REPORT_CSS}
 <div class="viz-root">
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary.</p>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model - evaluation summary.</p>
   {sections_html}
 </div>"""
     st.markdown(_flatten_for_markdown(body), unsafe_allow_html=True)
