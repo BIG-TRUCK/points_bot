@@ -540,7 +540,7 @@ def main(data_path: str | None = None) -> None:
             "(unpointed cards) use in-sample probabilities from the final model, "
             "since full LOOCV over the unpointed cards wasn't run given the class "
             "imbalance. Treat these as a mildly optimistic upper bound, not a "
-            "strict held-out estimate. AUPRC is the headline ranking metric — "
+            "strict held-out estimate. AUPRC is the headline ranking metric - "
             "AUROC is included for reference but reads misleadingly high under "
             "~40:1,584 class imbalance."
         ),

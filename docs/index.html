@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CHL Points Bot — Model Report</title>
+<title>CHL Points Bot - Model Report</title>
 <style>
   .viz-root {
     color-scheme: light;
@@ -87,11 +87,17 @@
   .viz-root .bar-track { background: var(--series-1-track); border-radius: 4px; height: 16px; }
   .viz-root .bar-fill { background: var(--series-1); height: 16px; border-radius: 0 4px 4px 0; min-width: 4px; }
   .viz-root .bar-value { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .viz-root .emb-probe { font-size: 11px; margin: -2px 0 4px 150px; }
+  .viz-root .emb-probe span { margin-right: 12px; }
+  .viz-root .emb-probe .emb-pos { color: var(--series-1); }
+  .viz-root .emb-probe .emb-neg { color: var(--text-muted); }
   .viz-root table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .viz-root th, .viz-root td { padding: 8px 10px; border-bottom: 1px solid var(--gridline); text-align: left; }
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
+  .viz-root ul.readme-list { margin: 0 0 8px; padding-left: 22px; color: var(--text-secondary); }
+  .viz-root ul.readme-list li { margin: 6px 0; line-height: 1.5; }
 </style>
 <style>
   body { margin: 0; background: var(--surface-page, #f9f9f7); }
@@ -101,13 +107,14 @@
 </head>
 <body class="viz-root">
 <main>
-  <h1>🎯 CHL Points Bot — Model Report</h1>
-  <p class="subtitle">10-point Canadian Highlander (CHL) points model — evaluation summary. Generated 2026-08-01 07:49 UTC.</p>
+  <h1>🎯 CHL Points Bot - Model Report</h1>
+  <p class="subtitle">10-point Canadian Highlander (CHL) points model - evaluation summary. Generated 2026-08-01 15:25 UTC.</p>
   
+  <h2 style="margin-top:0; border-top:none; padding-top:0;">Why</h2><ul class='readme-list'><li>I thought it would be fun</li><li>I wanted to see if the resulting model would accurate <em>at all</em> (my starting expectation was that this would be a total waste of time)</li><li>In a world where a good enough model for card power exists, points decisions would have less room for human bias</li><li>Magic is fun to think about.</li></ul><h2>The story so far</h2><ul class='readme-list'><li>Was originally going to do 7pt because it&#x27;s the cooler format, but tournament result postings are so sparse and unstructured it&#x27;d be too painful to gather enough data</li><li>Training on simple metadata and results alone was <strong>useless</strong></li><li>Scraping tags is a nightmare; every day I pray for an API</li><li>I am aware that edhrec is a Commander resource; it&#x27;s still 100-card singleton that some weirdos play competitively - some of their data should be useful</li><li>tag embeddings made a huge difference in model performance, hooray I can&#x27;t wait to rescrape them and have it take a million years because I need to render the whole damn web page for each card</li><li>Regressor attempts have been kind of a joke; not going to bother paying too much attention to them anymore. Nothing that&#x27;s unpointed right now is likely to ever be worth more than 1 point anyway.</li><li>Visualising pointed cards in 2d embedding space is neat</li><li>Surprised to see the classifier is semi-coherent; Wood Elves being a suspect is pretty damn funny though.</li><li>Putting all the oracle text through tf-idf might be a good idea.</li><li>It was a good idea</li><li>Would be nice to understand what the embedding features actually represent, reverse engineering them based on rank-order might help</li><li>I dunno why I&#x27;m generating an embedding from the keywords field; this could just be multi-hot instead</li><li>Actually, it&#x27;s kind of a pointless feature given only 3 of the pointed cards have it</li><li>Why am I not getting bigrams and trigrams when I do tf-idf???? idiot</li></ul>
   <section class="card">
-    <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
+    <h2>What's evaluated</h2>
     <p>
-      <strong>1,624</strong> unique cards tracked from CHL tournament decklists —
+      <strong>1,624</strong> unique cards tracked from CHL tournament decklists -
       <strong>39</strong> currently pointed, <strong>1,585</strong> unlabeled.
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
@@ -118,28 +125,28 @@
     <div class="two-col">
       <div>
         <p><strong>Classifier candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — mean rank pct 0.847<div class='params'>colsample_bytree=0.6, learning_rate=0.03, min_child_samples=2, n_estimators=600, num_leaves=31, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>XGBoost</strong> — mean rank pct 0.865 (winner)<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>Logistic</strong> — mean rank pct 0.839<div class='params'>C=0.03</div></li><li><strong>SVM</strong> — mean rank pct 0.777<div class='params'>C=3.0, gamma=auto</div></li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> - mean rank pct 0.837<div class='params'>colsample_bytree=0.6, learning_rate=0.03, min_child_samples=2, n_estimators=600, num_leaves=31, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>XGBoost</strong> - mean rank pct 0.866 (winner)<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>Logistic</strong> - mean rank pct 0.785<div class='params'>C=0.3</div></li><li><strong>SVM</strong> - mean rank pct 0.771<div class='params'>C=1.0, gamma=0.001</div></li></ul>
       </div>
       <div>
         <p><strong>Regressor candidates</strong></p>
-        <ul class="candidates"><li><strong>LightGBM</strong> — MAE 1.369<div class='params'>colsample_bytree=0.6, learning_rate=0.05, min_child_samples=1, n_estimators=400, num_leaves=15, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>XGBoost</strong> — MAE 1.251<div class='params'>colsample_bytree=0.6, learning_rate=0.03, max_depth=5, min_child_weight=2, n_estimators=400, reg_alpha=0.5, reg_lambda=0.1, subsample=1.0</div></li><li><strong>OrdinalRidge</strong> — MAE 0.975 (winner)<div class='params'>alpha=10.0</div></li><li><strong>SVM</strong> — MAE 1.012<div class='params'>C=1.0, epsilon=0.1, gamma=scale</div></li></ul>
+        <ul class="candidates"><li><strong>LightGBM</strong> - MAE 1.381<div class='params'>colsample_bytree=0.8, learning_rate=0.1, min_child_samples=2, n_estimators=200, num_leaves=15, reg_alpha=0.1, reg_lambda=0.5, subsample=1.0</div></li><li><strong>XGBoost</strong> - MAE 1.327<div class='params'>colsample_bytree=0.8, learning_rate=0.05, max_depth=3, min_child_weight=2, n_estimators=200, reg_alpha=0.0, reg_lambda=0.5, subsample=0.8</div></li><li><strong>OrdinalRidge</strong> - MAE 1.000 (winner)<div class='params'>alpha=10.0</div></li><li><strong>SVM</strong> - MAE 1.032<div class='params'>C=0.1, epsilon=0.05, gamma=scale</div></li></ul>
       </div>
     </div>
   </section>
 
-  <h2>Classifier performance — XGBoost</h2>
+  <h2>Classifier performance - XGBoost</h2>
   <div class="stat-grid">
     
     <div class="stat-tile">
       <div class="stat-label">AUPRC</div>
-      <div class="stat-value">0.311</div>
-      <div class="stat-note">headline metric — robust to the ~40:1,584 class imbalance</div>
+      <div class="stat-value">0.296</div>
+      
       
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">Best F1</div>
-      <div class="stat-value">0.343</div>
+      <div class="stat-value">0.400</div>
       <div class="stat-note">at threshold 0.03</div>
       <div class="stat-subs"><div class="stat-sub"><span class="stat-sub-label">F1 @ 0.5</span><span class="stat-sub-value">0.182</span></div><div class="stat-sub"><span class="stat-sub-label">Precision @ 0.5</span><span class="stat-sub-value">1.000</span></div><div class="stat-sub"><span class="stat-sub-label">Recall @ 0.5</span><span class="stat-sub-value">0.100</span></div></div>
     </div>
@@ -147,25 +154,25 @@
     <div class="stat-tile">
       <div class="stat-label">Naive baseline F1</div>
       <div class="stat-value">0.047</div>
-      <div class="stat-note">always flagging every card as pointed</div>
+      
       
     </div>
     
     <div class="stat-tile">
       <div class="stat-label">AUROC</div>
-      <div class="stat-value">0.883</div>
-      <div class="stat-note">reference only — reads high under this imbalance</div>
+      <div class="stat-value">0.882</div>
+      <div class="stat-note">reference only - data too imbalanced for this to be meaningful</div>
       
     </div>
   </div>
-  <p class="muted">Positives (pointed cards) use LOOCV-held-out probabilities; negatives (unpointed cards) use in-sample probabilities from the final model, since full LOOCV over the unpointed cards wasn&#x27;t run given the class imbalance. Treat these as a mildly optimistic upper bound, not a strict held-out estimate. AUPRC is the headline ranking metric — AUROC is included for reference but reads misleadingly high under ~40:1,584 class imbalance.</p>
+  <p class="muted">Positives (pointed cards) use LOOCV-held-out probabilities; negatives (unpointed cards) use in-sample probabilities from the final model, since full LOOCV over the unpointed cards wasn&#x27;t run given the class imbalance. Treat these as a mildly optimistic upper bound, not a strict held-out estimate. AUPRC is the headline ranking metric - AUROC is included for reference but reads misleadingly high under ~40:1,584 class imbalance.</p>
 
-  <h2>Regressor performance — OrdinalRidge</h2>
+  <h2>Regressor performance - OrdinalRidge</h2>
   <div class="stat-grid">
     
     <div class="stat-tile">
       <div class="stat-label">MAE (points)</div>
-      <div class="stat-value">0.975</div>
+      <div class="stat-value">1.000</div>
       
       
     </div>
@@ -173,648 +180,768 @@
     <div class="stat-tile">
       <div class="stat-label">Naive baseline MAE</div>
       <div class="stat-value">1.025</div>
-      <div class="stat-note">always predicting the mode</div>
+      
       
     </div>
   </div>
 
-  <h2>Feature importance (mean |SHAP|) — classifier</h2>
-  <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact.</p>
+  <h2>Feature importance (mean |SHAP|) - classifier</h2>
+  <p class="muted">SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample (treat those as directional only). For tags_emb_* features, &#8593;/&#8595; show which real card tags average highest/lowest on that dimension</p>
   <div class="shap-grid">
       <div class="shap-panel">
         <p class="panel-title">LightGBM</p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 0.6956"></div></div>
-          <div class="bar-value">0.696</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 0.7354"></div></div>
+          <div class="bar-value">0.735</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_263">tags_emb_263</div>
-          <div class="bar-track"><div class="bar-fill" style="width:61.8%" title="tags_emb_263: 0.4296"></div></div>
-          <div class="bar-value">0.430</div>
+          <div class="bar-track"><div class="bar-fill" style="width:57.3%" title="tags_emb_263: 0.4214"></div></div>
+          <div class="bar-value">0.421</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
-          <div class="bar-track"><div class="bar-fill" style="width:40.8%" title="tags_emb_191: 0.2842"></div></div>
-          <div class="bar-value">0.284</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_206">keywords_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:37.5%" title="keywords_emb_206: 0.2611"></div></div>
-          <div class="bar-value">0.261</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:33.0%" title="tags_emb_206: 0.2299"></div></div>
-          <div class="bar-value">0.230</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:31.4%" title="avg_placement: 0.2186"></div></div>
-          <div class="bar-value">0.219</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:29.3%" title="color_U: 0.2041"></div></div>
-          <div class="bar-value">0.204</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_10">tags_emb_10</div>
-          <div class="bar-track"><div class="bar-fill" style="width:28.4%" title="tags_emb_10: 0.1973"></div></div>
-          <div class="bar-value">0.197</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; typal-choose, monarch matters, cycle-a25-r-two-color, cycle-tr-mage</span><span class="emb-neg">&#8595; stasis, prevent activation, null rod, earthquake</span></div>
         <div class="bar-row">
           <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
-          <div class="bar-track"><div class="bar-fill" style="width:26.9%" title="edhrec_rank: 0.1868"></div></div>
-          <div class="bar-value">0.187</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40.4%" title="edhrec_rank: 0.2970"></div></div>
+          <div class="bar-value">0.297</div>
         </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
+          <div class="bar-track"><div class="bar-fill" style="width:35.5%" title="tags_emb_191: 0.2612"></div></div>
+          <div class="bar-value">0.261</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; shares name with a mechanic, play additional land, hellbent, tapland with set&#x27;s mechanic</span><span class="emb-neg">&#8595; repeatable rescue, flicker-planeswalker, flicker-enchantment, flying counter</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_10">tags_emb_10</div>
+          <div class="bar-track"><div class="bar-fill" style="width:29.5%" title="tags_emb_10: 0.2169"></div></div>
+          <div class="bar-value">0.217</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; discard outlet-creature, keyword errata flash, gives first strike, living weapon</span><span class="emb-neg">&#8595; hate-graveyard-cast, cycle-eve-filterland, gives castable from library, play from top</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="avg_placement">avg_placement</div>
+          <div class="bar-track"><div class="bar-fill" style="width:29.1%" title="avg_placement: 0.2139"></div></div>
+          <div class="bar-value">0.214</div>
+        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
-          <div class="bar-track"><div class="bar-fill" style="width:24.1%" title="tags_emb_0: 0.1678"></div></div>
-          <div class="bar-value">0.168</div>
+          <div class="bar-track"><div class="bar-fill" style="width:28.8%" title="tags_emb_0: 0.2121"></div></div>
+          <div class="bar-value">0.212</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; landfall other, cycle-som-fastland, cycle-fastland, bombard</span><span class="emb-neg">&#8595; sneak-creature, cycle-mrd-talisman, cycle-talisman, tutor-artifact-equipment</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_120">keywords_emb_120</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.4%" title="keywords_emb_120: 0.1488"></div></div>
-          <div class="bar-value">0.149</div>
+          <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
+          <div class="bar-track"><div class="bar-fill" style="width:26.1%" title="tags_emb_206: 0.1917"></div></div>
+          <div class="bar-value">0.192</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition</span><span class="emb-neg">&#8595; energy generator, remove counters-player, counter fuel-energy, restock-to-top</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_98">tags_emb_98</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.2%" title="tags_emb_98: 0.1472"></div></div>
-          <div class="bar-value">0.147</div>
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:24.9%" title="color_U: 0.1833"></div></div>
+          <div class="bar-value">0.183</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_347">tags_emb_347</div>
-          <div class="bar-track"><div class="bar-fill" style="width:20.6%" title="tags_emb_347: 0.1435"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:22.7%" title="tags_emb_347: 0.1667"></div></div>
+          <div class="bar-value">0.167</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; tutor-creature-green, cycle-tr-mage, discard outlet-creature, tap fuel-artifact</span><span class="emb-neg">&#8595; hate-discard, impulse-planeswalker, earthquake, hate-graveyard-cast</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_98">tags_emb_98</div>
+          <div class="bar-track"><div class="bar-fill" style="width:19.5%" title="tags_emb_98: 0.1432"></div></div>
           <div class="bar-value">0.143</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-block-bfz-creatureland, cycle-shm-filterland, cycle-dual-creatureland, cycle-zendikar-creatureland</span><span class="emb-neg">&#8595; delayed cantrip, miniwheel, french vanilla equipment, hellbent</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_4">tags_emb_4</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.4%" title="tags_emb_4: 0.1282"></div></div>
-          <div class="bar-value">0.128</div>
+          <div class="bar-label" title="tags_emb_60">tags_emb_60</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.5%" title="tags_emb_60: 0.1137"></div></div>
+          <div class="bar-value">0.114</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, cycle-mh2-bridge, cycle-eve-filterland, cycle-horizon-land</span><span class="emb-neg">&#8595; typal-goblin, precognition engine, precognition, hate-multicolor</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_328">keywords_emb_328</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.1%" title="keywords_emb_328: 0.1258"></div></div>
-          <div class="bar-value">0.126</div>
-        </div></div>
+          <div class="bar-label" title="tags_emb_167">tags_emb_167</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.1%" title="tags_emb_167: 0.1110"></div></div>
+          <div class="bar-value">0.111</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-mrd-artifact-land, hate-etb, prevent trigger, cheat death-self</span><span class="emb-neg">&#8595; young pyromancer ability, typal-warrior, hate-graveyard-cast, synergy-blocker-self</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_332">tags_emb_332</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.1%" title="tags_emb_332: 0.1109"></div></div>
+          <div class="bar-value">0.111</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-apc-painland, cycle-painland, cycle-ice-painland, cycle-eve-filterland</span><span class="emb-neg">&#8595; affinity for artifacts, potentially free, affinity, hate-regenerate</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_275">tags_emb_275</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.7%" title="tags_emb_275: 0.1078"></div></div>
+          <div class="bar-value">0.108</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-kld-fastland, cycle-fastland, cycle-shm-filterland, cycle-som-fastland</span><span class="emb-neg">&#8595; mana rock with set&#x27;s mechanic, pinger, rhyming name, heroic</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">XGBoost <span class="badge">winner</span></p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 1.4418"></div></div>
-          <div class="bar-value">1.442</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="appearances: 1.4651"></div></div>
+          <div class="bar-value">1.465</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
-          <div class="bar-track"><div class="bar-fill" style="width:23.7%" title="edhrec_rank: 0.3411"></div></div>
-          <div class="bar-value">0.341</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_263">tags_emb_263</div>
-          <div class="bar-track"><div class="bar-fill" style="width:22.0%" title="tags_emb_263: 0.3179"></div></div>
-          <div class="bar-value">0.318</div>
+          <div class="bar-track"><div class="bar-fill" style="width:23.7%" title="tags_emb_263: 0.3476"></div></div>
+          <div class="bar-value">0.348</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; typal-choose, monarch matters, cycle-a25-r-two-color, cycle-tr-mage</span><span class="emb-neg">&#8595; stasis, prevent activation, null rod, earthquake</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.8%" title="avg_placement: 0.3145"></div></div>
-          <div class="bar-value">0.315</div>
+          <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
+          <div class="bar-track"><div class="bar-fill" style="width:23.5%" title="edhrec_rank: 0.3445"></div></div>
+          <div class="bar-value">0.344</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.6%" title="game_changer: 0.3114"></div></div>
-          <div class="bar-value">0.311</div>
+          <div class="bar-track"><div class="bar-fill" style="width:21.1%" title="game_changer: 0.3097"></div></div>
+          <div class="bar-value">0.310</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_206">keywords_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.5%" title="keywords_emb_206: 0.2236"></div></div>
-          <div class="bar-value">0.224</div>
+          <div class="bar-label" title="avg_placement">avg_placement</div>
+          <div class="bar-track"><div class="bar-fill" style="width:20.6%" title="avg_placement: 0.3017"></div></div>
+          <div class="bar-value">0.302</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:15.4%" title="color_U: 0.2217"></div></div>
-          <div class="bar-value">0.222</div>
+          <div class="bar-label" title="tags_emb_339">tags_emb_339</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_339: 0.2131"></div></div>
+          <div class="bar-value">0.213</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_274">tags_emb_274</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.0%" title="tags_emb_274: 0.2018"></div></div>
-          <div class="bar-value">0.202</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; crucible of worlds, shardland, cycle-snc-triland, cycle-rav-shockland</span><span class="emb-neg">&#8595; pseudo-hexproof, synergy-solo-attack, exalted, silence</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_206">tags_emb_206</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.3%" title="tags_emb_206: 0.1912"></div></div>
-          <div class="bar-value">0.191</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_206: 0.2128"></div></div>
+          <div class="bar-value">0.213</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, sneak-creature, french vanilla, precognition</span><span class="emb-neg">&#8595; energy generator, remove counters-player, counter fuel-energy, restock-to-top</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.8%" title="color_U: 0.2023"></div></div>
+          <div class="bar-value">0.202</div>
+        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_191">tags_emb_191</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.4%" title="tags_emb_191: 0.1795"></div></div>
-          <div class="bar-value">0.179</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.1%" title="tags_emb_191: 0.1768"></div></div>
+          <div class="bar-value">0.177</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; shares name with a mechanic, play additional land, hellbent, tapland with set&#x27;s mechanic</span><span class="emb-neg">&#8595; repeatable rescue, flicker-planeswalker, flicker-enchantment, flying counter</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_274">tags_emb_274</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.3%" title="tags_emb_274: 0.1662"></div></div>
+          <div class="bar-value">0.166</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-verge, cycle-dsk-verge, french vanilla equipment, cycle-kld-fastland</span><span class="emb-neg">&#8595; tutor-card, tutor-to-graveyard, tutor-to-top, prevent trigger</span></div>
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.0%" title="rarity: 0.1592"></div></div>
-          <div class="bar-value">0.159</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.0%" title="rarity: 0.1619"></div></div>
+          <div class="bar-value">0.162</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_332">tags_emb_332</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.9%" title="tags_emb_332: 0.1426"></div></div>
-          <div class="bar-value">0.143</div>
+          <div class="bar-label" title="tags_emb_105">tags_emb_105</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_105: 0.1465"></div></div>
+          <div class="bar-value">0.147</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; doom blade, delayed cantrip, cheat death-self, typal-zombie</span><span class="emb-neg">&#8595; tapper-land, kismet effect, tapper-artifact, rescue-land</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_171">tags_emb_171</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.2%" title="tags_emb_171: 0.1322"></div></div>
-          <div class="bar-value">0.132</div>
+          <div class="bar-label" title="tags_emb_275">tags_emb_275</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.5%" title="tags_emb_275: 0.1388"></div></div>
+          <div class="bar-value">0.139</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-kld-fastland, cycle-fastland, cycle-shm-filterland, cycle-som-fastland</span><span class="emb-neg">&#8595; mana rock with set&#x27;s mechanic, pinger, rhyming name, heroic</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="is_creature">is_creature</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.4%" title="is_creature: 0.1372"></div></div>
+          <div class="bar-value">0.137</div>
+        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_227">tags_emb_227</div>
-          <div class="bar-track"><div class="bar-fill" style="width:8.6%" title="tags_emb_227: 0.1246"></div></div>
-          <div class="bar-value">0.125</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.1%" title="tags_emb_227: 0.1336"></div></div>
+          <div class="bar-value">0.134</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_255">tags_emb_255</div>
-          <div class="bar-track"><div class="bar-fill" style="width:8.3%" title="tags_emb_255: 0.1202"></div></div>
-          <div class="bar-value">0.120</div>
-        </div></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; counterspell-free, counterspell-sorcery, tapper-artifact, counterspell with set mechanic</span><span class="emb-neg">&#8595; shares name with a set, cycle-talisman, cycle-mrd-talisman, deal with the devil</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">Logistic</p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="oracle_tfidf_add: 0.1472"></div></div>
-          <div class="bar-value">0.147</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="oracle_tfidf_add: 0.3774"></div></div>
+          <div class="bar-value">0.377</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:91.5%" title="appearances: 0.1347"></div></div>
-          <div class="bar-value">0.135</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="color_U">color_U</div>
-          <div class="bar-track"><div class="bar-fill" style="width:79.2%" title="color_U: 0.1166"></div></div>
-          <div class="bar-value">0.117</div>
+          <div class="bar-track"><div class="bar-fill" style="width:80.3%" title="color_U: 0.3031"></div></div>
+          <div class="bar-value">0.303</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_136">tags_emb_136</div>
-          <div class="bar-track"><div class="bar-fill" style="width:77.8%" title="tags_emb_136: 0.1145"></div></div>
-          <div class="bar-value">0.115</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_rest">oracle_tfidf_rest</div>
-          <div class="bar-track"><div class="bar-fill" style="width:74.6%" title="oracle_tfidf_rest: 0.1098"></div></div>
-          <div class="bar-value">0.110</div>
+          <div class="bar-track"><div class="bar-fill" style="width:72.5%" title="oracle_tfidf_rest: 0.2736"></div></div>
+          <div class="bar-value">0.274</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="top4_rate">top4_rate</div>
-          <div class="bar-track"><div class="bar-fill" style="width:74.2%" title="top4_rate: 0.1092"></div></div>
-          <div class="bar-value">0.109</div>
+          <div class="bar-label" title="is_creature">is_creature</div>
+          <div class="bar-track"><div class="bar-fill" style="width:68.9%" title="is_creature: 0.2599"></div></div>
+          <div class="bar-value">0.260</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_239">tags_emb_239</div>
-          <div class="bar-track"><div class="bar-fill" style="width:72.4%" title="tags_emb_239: 0.1066"></div></div>
-          <div class="bar-value">0.107</div>
+          <div class="bar-track"><div class="bar-fill" style="width:66.7%" title="tags_emb_239: 0.2516"></div></div>
+          <div class="bar-value">0.252</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; bring your own crew, keyword errata flash, karnstructs, cranial plating</span><span class="emb-neg">&#8595; flying counter, hate-graveyard-cast, cycle-2x2-draft-signpost, card types in graveyard matter</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_284">tags_emb_284</div>
-          <div class="bar-track"><div class="bar-fill" style="width:68.8%" title="tags_emb_284: 0.1013"></div></div>
-          <div class="bar-value">0.101</div>
+          <div class="bar-label" title="tags_emb_136">tags_emb_136</div>
+          <div class="bar-track"><div class="bar-fill" style="width:66.6%" title="tags_emb_136: 0.2513"></div></div>
+          <div class="bar-value">0.251</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; flying counter, card types in graveyard matter, lhurgoyf, cycle-mrd-talisman</span><span class="emb-neg">&#8595; consult, consult-cast, tutor-from-opponent, cycle-tr-mage</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_70">tags_emb_70</div>
-          <div class="bar-track"><div class="bar-fill" style="width:61.8%" title="tags_emb_70: 0.0910"></div></div>
-          <div class="bar-value">0.091</div>
+          <div class="bar-label" title="appearances">appearances</div>
+          <div class="bar-track"><div class="bar-fill" style="width:65.7%" title="appearances: 0.2478"></div></div>
+          <div class="bar-value">0.248</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_313">tags_emb_313</div>
-          <div class="bar-track"><div class="bar-fill" style="width:59.7%" title="tags_emb_313: 0.0879"></div></div>
-          <div class="bar-value">0.088</div>
+          <div class="bar-label" title="top4_rate">top4_rate</div>
+          <div class="bar-track"><div class="bar-fill" style="width:58.4%" title="top4_rate: 0.2203"></div></div>
+          <div class="bar-value">0.220</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_52">tags_emb_52</div>
-          <div class="bar-track"><div class="bar-fill" style="width:57.6%" title="tags_emb_52: 0.0849"></div></div>
-          <div class="bar-value">0.085</div>
+          <div class="bar-track"><div class="bar-fill" style="width:57.5%" title="tags_emb_52: 0.2170"></div></div>
+          <div class="bar-value">0.217</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; french vanilla equipment, deal with the devil, rainbow land, cycle-eld-castle</span><span class="emb-neg">&#8595; restock-self, type addition from none, hate-regenerate, removal-tuck</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_39">tags_emb_39</div>
-          <div class="bar-track"><div class="bar-fill" style="width:56.6%" title="tags_emb_39: 0.0834"></div></div>
-          <div class="bar-value">0.083</div>
+          <div class="bar-label" title="tags_emb_38">tags_emb_38</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55.1%" title="tags_emb_38: 0.2081"></div></div>
+          <div class="bar-value">0.208</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; temporary token, token versions of cards, typal-goblin, copy-creature</span><span class="emb-neg">&#8595; earthquake, voting, cycle-1mv-tutor, cycle-bfz-tangoland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_171">tags_emb_171</div>
-          <div class="bar-track"><div class="bar-fill" style="width:55.3%" title="tags_emb_171: 0.0814"></div></div>
-          <div class="bar-value">0.081</div>
+          <div class="bar-label" title="tags_emb_318">tags_emb_318</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55.1%" title="tags_emb_318: 0.2079"></div></div>
+          <div class="bar-value">0.208</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-mrd-talisman, cycle-talisman, mirrored knight, kismet effect</span><span class="emb-neg">&#8595; burn with set&#x27;s mechanic, splits on death, lands in graveyard matter, card types in graveyard matter</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_293">tags_emb_293</div>
-          <div class="bar-track"><div class="bar-fill" style="width:53.2%" title="tags_emb_293: 0.0783"></div></div>
-          <div class="bar-value">0.078</div>
+          <div class="bar-label" title="avg_placement">avg_placement</div>
+          <div class="bar-track"><div class="bar-fill" style="width:54.0%" title="avg_placement: 0.2036"></div></div>
+          <div class="bar-value">0.204</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_156">tags_emb_156</div>
-          <div class="bar-track"><div class="bar-fill" style="width:52.8%" title="tags_emb_156: 0.0777"></div></div>
-          <div class="bar-value">0.078</div>
-        </div></div>
+          <div class="bar-label" title="tags_emb_70">tags_emb_70</div>
+          <div class="bar-track"><div class="bar-fill" style="width:53.8%" title="tags_emb_70: 0.2031"></div></div>
+          <div class="bar-value">0.203</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; forced attacker, shares name with a mechanic, hate-etb, prevent trigger</span><span class="emb-neg">&#8595; cycle-tr-mage, cycle-2x2-draft-signpost, discard outlet-creature, tutor-artifact-equipment</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_166">tags_emb_166</div>
+          <div class="bar-track"><div class="bar-fill" style="width:51.9%" title="tags_emb_166: 0.1957"></div></div>
+          <div class="bar-value">0.196</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; tutor-artifact-equipment, take the initiative, artifactfall, exponential</span><span class="emb-neg">&#8595; lightning bolt redux, hate-graveyard-cast, reanimate-nonland, bombard</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_284">tags_emb_284</div>
+          <div class="bar-track"><div class="bar-fill" style="width:49.9%" title="tags_emb_284: 0.1882"></div></div>
+          <div class="bar-value">0.188</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-tangoland, cycle-bfz-tangoland, synergy-basic, synergy-token</span><span class="emb-neg">&#8595; type addition noble, typal-choose, mirrored knight, pseudo-hexproof</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">SVM</p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="game_changer: 0.0328"></div></div>
-          <div class="bar-value">0.033</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="game_changer: 0.0390"></div></div>
+          <div class="bar-value">0.039</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_lose">oracle_tfidf_lose</div>
-          <div class="bar-track"><div class="bar-fill" style="width:26.6%" title="oracle_tfidf_lose: 0.0087"></div></div>
-          <div class="bar-value">0.009</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:20.7%" title="n_better-than: 0.0068"></div></div>
-          <div class="bar-value">0.007</div>
+          <div class="bar-track"><div class="bar-fill" style="width:26.3%" title="n_better-than: 0.0103"></div></div>
+          <div class="bar-value">0.010</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_instant">oracle_tfidf_instant</div>
-          <div class="bar-track"><div class="bar-fill" style="width:19.8%" title="oracle_tfidf_instant: 0.0065"></div></div>
-          <div class="bar-value">0.006</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_delve">oracle_tfidf_delve</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.9%" title="oracle_tfidf_delve: 0.0042"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_planeswalker">oracle_tfidf_planeswalker</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.4%" title="oracle_tfidf_planeswalker: 0.0041"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="oracle_tfidf_rest">oracle_tfidf_rest</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.8%" title="oracle_tfidf_rest: 0.0039"></div></div>
-          <div class="bar-value">0.004</div>
+          <div class="bar-track"><div class="bar-fill" style="width:19.1%" title="oracle_tfidf_rest: 0.0074"></div></div>
+          <div class="bar-value">0.007</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_327">keywords_emb_327</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.7%" title="keywords_emb_327: 0.0039"></div></div>
+          <div class="bar-label" title="oracle_tfidf_lose">oracle_tfidf_lose</div>
+          <div class="bar-track"><div class="bar-fill" style="width:17.5%" title="oracle_tfidf_lose: 0.0068"></div></div>
+          <div class="bar-value">0.007</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_cards graveyard">oracle_tfidf_cards graveyard</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.4%" title="oracle_tfidf_cards graveyard: 0.0052"></div></div>
+          <div class="bar-value">0.005</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="pips_G">pips_G</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.5%" title="pips_G: 0.0041"></div></div>
           <div class="bar-value">0.004</div>
         </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_166">tags_emb_166</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_166: 0.0039"></div></div>
+          <div class="bar-value">0.004</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; tutor-artifact-equipment, take the initiative, artifactfall, exponential</span><span class="emb-neg">&#8595; lightning bolt redux, hate-graveyard-cast, reanimate-nonland, bombard</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
+          <div class="bar-track"><div class="bar-fill" style="width:8.4%" title="oracle_tfidf_add: 0.0033"></div></div>
+          <div class="bar-value">0.003</div>
+        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="n_referenced-by">n_referenced-by</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.6%" title="n_referenced-by: 0.0038"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_93">tags_emb_93</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.3%" title="tags_emb_93: 0.0037"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_chosen">oracle_tfidf_chosen</div>
-          <div class="bar-track"><div class="bar-fill" style="width:11.1%" title="oracle_tfidf_chosen: 0.0037"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.9%" title="appearances: 0.0036"></div></div>
-          <div class="bar-value">0.004</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_20">keywords_emb_20</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="keywords_emb_20: 0.0034"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:8.1%" title="n_referenced-by: 0.0032"></div></div>
           <div class="bar-value">0.003</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_ability">oracle_tfidf_ability</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.5%" title="oracle_tfidf_ability: 0.0031"></div></div>
+          <div class="bar-label" title="oracle_tfidf_beginning">oracle_tfidf_beginning</div>
+          <div class="bar-track"><div class="bar-fill" style="width:8.1%" title="oracle_tfidf_beginning: 0.0032"></div></div>
           <div class="bar-value">0.003</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_334">tags_emb_334</div>
-          <div class="bar-track"><div class="bar-fill" style="width:9.4%" title="tags_emb_334: 0.0031"></div></div>
+          <div class="bar-label" title="rarity">rarity</div>
+          <div class="bar-track"><div class="bar-fill" style="width:7.3%" title="rarity: 0.0028"></div></div>
           <div class="bar-value">0.003</div>
-        </div></div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_36">tags_emb_36</div>
+          <div class="bar-track"><div class="bar-fill" style="width:7.0%" title="tags_emb_36: 0.0028"></div></div>
+          <div class="bar-value">0.003</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; restock-self, gives vigilance, flying counter, discard outlet-creature</span><span class="emb-neg">&#8595; shares name with a set, cycle-m10-checkland, earthquake, shares name with a mechanic</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_pays">oracle_tfidf_pays</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.8%" title="oracle_tfidf_pays: 0.0026"></div></div>
+          <div class="bar-value">0.003</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_330">tags_emb_330</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.7%" title="tags_emb_330: 0.0026"></div></div>
+          <div class="bar-value">0.003</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-lea-moxen, lhurgoyf, soothsaying, tuck-outlet</span><span class="emb-neg">&#8595; splits on death, land conversion, universal type change, leaves body behind</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_302">tags_emb_302</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.7%" title="tags_emb_302: 0.0026"></div></div>
+          <div class="bar-value">0.003</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; land conversion, blood moon effect, play additional land, universal type change</span><span class="emb-neg">&#8595; counterspell-automatic, counterspell-reusable, counterspell-noncreature, hate-free-spell</span></div></div>
       </div></div>
 
-  <h2>Feature importance (mean |SHAP|) — regressor</h2>
+  <h2>Feature importance (mean |SHAP|) - regressor</h2>
   <div class="shap-grid">
       <div class="shap-panel">
         <p class="panel-title">LightGBM</p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_364">tags_emb_364</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.4421"></div></div>
-          <div class="bar-value">0.442</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.5114"></div></div>
+          <div class="bar-value">0.511</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; lands in graveyard matter, tutor-land-any, phyrexian mana cost, alternate-cost-life</span><span class="emb-neg">&#8595; synergy-solo-attack, exalted, battle cry, neo-regenerate</span></div>
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:39.4%" title="rarity: 0.1742"></div></div>
-          <div class="bar-value">0.174</div>
+          <div class="bar-track"><div class="bar-fill" style="width:43.6%" title="rarity: 0.2227"></div></div>
+          <div class="bar-value">0.223</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_247">tags_emb_247</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.8%" title="tags_emb_247: 0.1581"></div></div>
-          <div class="bar-value">0.158</div>
+          <div class="bar-track"><div class="bar-fill" style="width:33.4%" title="tags_emb_247: 0.1710"></div></div>
+          <div class="bar-value">0.171</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; hate-blocker, reanimate copy, mana rock with set&#x27;s mechanic, hate-graveyard-cast</span><span class="emb-neg">&#8595; cycle-war-u-two-color-spell, flicker-planeswalker, flicker-enchantment, affinity for artifacts</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_110">tags_emb_110</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.5%" title="tags_emb_110: 0.0951"></div></div>
-          <div class="bar-value">0.095</div>
+          <div class="bar-track"><div class="bar-fill" style="width:32.6%" title="tags_emb_110: 0.1668"></div></div>
+          <div class="bar-value">0.167</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_3">tags_emb_3</div>
-          <div class="bar-track"><div class="bar-fill" style="width:21.4%" title="tags_emb_3: 0.0945"></div></div>
-          <div class="bar-value">0.094</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
-          <div class="bar-track"><div class="bar-fill" style="width:17.7%" title="tags_emb_21: 0.0782"></div></div>
-          <div class="bar-value">0.078</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; leveler, mana rock with set&#x27;s mechanic, extra turn, bear with set&#x27;s mechanic</span><span class="emb-neg">&#8595; voting, tutor-land-island, tutor-land-forest, tutor-land-swamp</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_0">tags_emb_0</div>
-          <div class="bar-track"><div class="bar-fill" style="width:17.0%" title="tags_emb_0: 0.0750"></div></div>
-          <div class="bar-value">0.075</div>
+          <div class="bar-track"><div class="bar-fill" style="width:19.1%" title="tags_emb_0: 0.0979"></div></div>
+          <div class="bar-value">0.098</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; landfall other, cycle-som-fastland, cycle-fastland, bombard</span><span class="emb-neg">&#8595; sneak-creature, cycle-mrd-talisman, cycle-talisman, tutor-artifact-equipment</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_137">tags_emb_137</div>
-          <div class="bar-track"><div class="bar-fill" style="width:16.1%" title="tags_emb_137: 0.0713"></div></div>
-          <div class="bar-value">0.071</div>
+          <div class="bar-label" title="tags_emb_3">tags_emb_3</div>
+          <div class="bar-track"><div class="bar-fill" style="width:16.0%" title="tags_emb_3: 0.0820"></div></div>
+          <div class="bar-value">0.082</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; forced attacker, counter fuel-energy, remove counters-player, energy generator</span><span class="emb-neg">&#8595; cycle-snc-triland, shardland, tricycle-land, cycle-triland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_72">tags_emb_72</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="tags_emb_72: 0.0641"></div></div>
-          <div class="bar-value">0.064</div>
+          <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.6%" title="tags_emb_21: 0.0800"></div></div>
+          <div class="bar-value">0.080</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.4%" title="is_artifact: 0.0639"></div></div>
-          <div class="bar-value">0.064</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, crucible of worlds, cycle-mrd-artifact-land, landfall other</span><span class="emb-neg">&#8595; gives flash, offcolor additional cost, voting, affinity for artifacts</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_195">tags_emb_195</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.8%" title="tags_emb_195: 0.0610"></div></div>
-          <div class="bar-value">0.061</div>
+          <div class="bar-track"><div class="bar-fill" style="width:13.2%" title="tags_emb_195: 0.0677"></div></div>
+          <div class="bar-value">0.068</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, the ring tempts you</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_72">tags_emb_72</div>
+          <div class="bar-track"><div class="bar-fill" style="width:7.1%" title="tags_emb_72: 0.0365"></div></div>
+          <div class="bar-value">0.036</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; synergy-color-share, earthquake, counterspell-bounce, counterspell with set mechanic</span><span class="emb-neg">&#8595; deal with the devil, hellbent, cheat death-self, unprinted token</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_4">tags_emb_4</div>
+          <div class="bar-track"><div class="bar-fill" style="width:7.0%" title="tags_emb_4: 0.0356"></div></div>
+          <div class="bar-value">0.036</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; gives fear, cycle-eve-filterland, cycle-lrw-command, cycle-isd-checkland</span><span class="emb-neg">&#8595; shares name with a mechanic, counterspell with set mechanic, counterspell-ability, counterspell-sorcery</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_342">tags_emb_342</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.6%" title="tags_emb_342: 0.0292"></div></div>
-          <div class="bar-value">0.029</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.8%" title="tags_emb_342: 0.0347"></div></div>
+          <div class="bar-value">0.035</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; discard to exile, thoughtseize, abrade, peek-hand</span><span class="emb-neg">&#8595; young pyromancer ability, cycle-ons-fetchland, cycle-eve-filterland, cycle-isd-checkland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_89">tags_emb_89</div>
-          <div class="bar-track"><div class="bar-fill" style="width:6.1%" title="tags_emb_89: 0.0271"></div></div>
-          <div class="bar-value">0.027</div>
+          <div class="bar-label" title="tags_emb_254">tags_emb_254</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.4%" title="tags_emb_254: 0.0329"></div></div>
+          <div class="bar-value">0.033</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; gives uncounterable, repeatable treasures, tutor-to-graveyard, non mana ability mana</span><span class="emb-neg">&#8595; cycle-kld-fastland, shockland, cycle-rav-shockland, cycle-fastland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:5.3%" title="n_better-than: 0.0234"></div></div>
-          <div class="bar-value">0.023</div>
+          <div class="bar-label" title="tags_emb_6">tags_emb_6</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.4%" title="tags_emb_6: 0.0327"></div></div>
+          <div class="bar-value">0.033</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; unique planeswalker type, sol land, synergy-activated-ability, quick equip</span><span class="emb-neg">&#8595; stasis, cycle-1mv-tutor, cycle-ema-tutor, blood moon effect</span></div>
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:5.3%" title="appearances: 0.0233"></div></div>
-          <div class="bar-value">0.023</div>
-        </div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.2%" title="appearances: 0.0319"></div></div>
+          <div class="bar-value">0.032</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_89">tags_emb_89</div>
+          <div class="bar-track"><div class="bar-fill" style="width:5.9%" title="tags_emb_89: 0.0304"></div></div>
+          <div class="bar-value">0.030</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; flicker-enchantment, flicker-planeswalker, flicker-artifact, battle cry</span><span class="emb-neg">&#8595; stasis, delayed cantrip, whirlpool, cycle-ons-m-cycling-land</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">XGBoost</p>
         <div class="bar-chart">
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_364">tags_emb_364</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_364: 0.3108"></div></div>
-          <div class="bar-value">0.311</div>
-        </div>
-        <div class="bar-row">
           <div class="bar-label" title="tags_emb_110">tags_emb_110</div>
-          <div class="bar-track"><div class="bar-fill" style="width:58.4%" title="tags_emb_110: 0.1817"></div></div>
-          <div class="bar-value">0.182</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_110: 0.3266"></div></div>
+          <div class="bar-value">0.327</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; leveler, mana rock with set&#x27;s mechanic, extra turn, bear with set&#x27;s mechanic</span><span class="emb-neg">&#8595; voting, tutor-land-island, tutor-land-forest, tutor-land-swamp</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_15">tags_emb_15</div>
-          <div class="bar-track"><div class="bar-fill" style="width:48.5%" title="tags_emb_15: 0.1508"></div></div>
-          <div class="bar-value">0.151</div>
+          <div class="bar-label" title="tags_emb_364">tags_emb_364</div>
+          <div class="bar-track"><div class="bar-fill" style="width:74.0%" title="tags_emb_364: 0.2417"></div></div>
+          <div class="bar-value">0.242</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
-          <div class="bar-track"><div class="bar-fill" style="width:35.3%" title="oracle_tfidf_add: 0.1099"></div></div>
-          <div class="bar-value">0.110</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:29.7%" title="rarity: 0.0922"></div></div>
-          <div class="bar-value">0.092</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; lands in graveyard matter, tutor-land-any, phyrexian mana cost, alternate-cost-life</span><span class="emb-neg">&#8595; synergy-solo-attack, exalted, battle cry, neo-regenerate</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_66">tags_emb_66</div>
-          <div class="bar-track"><div class="bar-fill" style="width:24.1%" title="tags_emb_66: 0.0748"></div></div>
-          <div class="bar-value">0.075</div>
+          <div class="bar-track"><div class="bar-fill" style="width:32.3%" title="tags_emb_66: 0.1056"></div></div>
+          <div class="bar-value">0.106</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; wheel-symmetrical, wheel, miniwheel, delayed cantrip</span><span class="emb-neg">&#8595; cycle-bfz-tangoland, cycle-tangoland, cycle-isd-checkland, cycle-checkland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_214">tags_emb_214</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.4%" title="tags_emb_214: 0.0573"></div></div>
-          <div class="bar-value">0.057</div>
+          <div class="bar-label" title="oracle_tfidf_add">oracle_tfidf_add</div>
+          <div class="bar-track"><div class="bar-fill" style="width:26.6%" title="oracle_tfidf_add: 0.0868"></div></div>
+          <div class="bar-value">0.087</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:18.0%" title="appearances: 0.0559"></div></div>
-          <div class="bar-value">0.056</div>
+          <div class="bar-label" title="rarity">rarity</div>
+          <div class="bar-track"><div class="bar-fill" style="width:23.2%" title="rarity: 0.0759"></div></div>
+          <div class="bar-value">0.076</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_307">tags_emb_307</div>
-          <div class="bar-track"><div class="bar-fill" style="width:16.3%" title="tags_emb_307: 0.0505"></div></div>
-          <div class="bar-value">0.051</div>
+          <div class="bar-label" title="tags_emb_72">tags_emb_72</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.7%" title="tags_emb_72: 0.0612"></div></div>
+          <div class="bar-value">0.061</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; synergy-color-share, earthquake, counterspell-bounce, counterspell with set mechanic</span><span class="emb-neg">&#8595; deal with the devil, hellbent, cheat death-self, unprinted token</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.7%" title="is_artifact: 0.0424"></div></div>
-          <div class="bar-value">0.042</div>
+          <div class="bar-label" title="tags_emb_255">tags_emb_255</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.9%" title="tags_emb_255: 0.0487"></div></div>
+          <div class="bar-value">0.049</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_125">tags_emb_125</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.3%" title="tags_emb_125: 0.0412"></div></div>
-          <div class="bar-value">0.041</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:12.7%" title="n_better-than: 0.0396"></div></div>
-          <div class="bar-value">0.040</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="avg_level">avg_level</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="avg_level: 0.0320"></div></div>
-          <div class="bar-value">0.032</div>
-        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; prevent activation, null rod, hate-activation, hate-artifact</span><span class="emb-neg">&#8595; cycle-zen-fetchland, cycle-nonmana-land, cycle-fetchland, cycle-ons-fetchland</span></div>
         <div class="bar-row">
           <div class="bar-label" title="tags_emb_36">tags_emb_36</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_36: 0.0311"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.9%" title="tags_emb_36: 0.0485"></div></div>
+          <div class="bar-value">0.049</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; restock-self, gives vigilance, flying counter, discard outlet-creature</span><span class="emb-neg">&#8595; shares name with a set, cycle-m10-checkland, earthquake, shares name with a mechanic</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="avg_level">avg_level</div>
+          <div class="bar-track"><div class="bar-fill" style="width:14.8%" title="avg_level: 0.0484"></div></div>
+          <div class="bar-value">0.048</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="top4_rate">top4_rate</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.8%" title="top4_rate: 0.0385"></div></div>
+          <div class="bar-value">0.038</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_34">tags_emb_34</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.0%" title="tags_emb_34: 0.0360"></div></div>
+          <div class="bar-value">0.036</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, keyword errata flash, bombard, keyword errata</span><span class="emb-neg">&#8595; synergy-enchantment, regrowth-sorcery, regrowth-instant, synergy-activated-ability</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="edhrec_rank">edhrec_rank</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.6%" title="edhrec_rank: 0.0345"></div></div>
+          <div class="bar-value">0.034</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_195">tags_emb_195</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.3%" title="tags_emb_195: 0.0335"></div></div>
+          <div class="bar-value">0.034</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, donate rampant growth, tutor-land-island, buff mana</span><span class="emb-neg">&#8595; cheat death-self, reanimate copy, gains lifelink, the ring tempts you</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_144">tags_emb_144</div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_144: 0.0325"></div></div>
+          <div class="bar-value">0.033</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; doom blade, french vanilla equipment, old banish templating, haven</span><span class="emb-neg">&#8595; cda-toughness, birthing pod, cda-power, lhurgoyf</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_15">tags_emb_15</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.6%" title="tags_emb_15: 0.0312"></div></div>
           <div class="bar-value">0.031</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="tags_emb_119">tags_emb_119</div>
-          <div class="bar-track"><div class="bar-fill" style="width:10.0%" title="tags_emb_119: 0.0309"></div></div>
-          <div class="bar-value">0.031</div>
-        </div></div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; exalted, synergy-solo-attack, cycle-verge, cycle-dsk-verge</span><span class="emb-neg">&#8595; phyrexian mana cost, nightveil theft, alternate-cost-life, phyrexian mana</span></div></div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">OrdinalRidge <span class="badge">winner</span></p>
         <div class="bar-chart">
         <div class="bar-row">
           <div class="bar-label" title="n_better-than">n_better-than</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="n_better-than: 0.2772"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="n_better-than: 0.2769"></div></div>
           <div class="bar-value">0.277</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="appearances">appearances</div>
-          <div class="bar-track"><div class="bar-fill" style="width:79.6%" title="appearances: 0.2206"></div></div>
-          <div class="bar-value">0.221</div>
+          <div class="bar-track"><div class="bar-fill" style="width:77.8%" title="appearances: 0.2154"></div></div>
+          <div class="bar-value">0.215</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="avg_placement">avg_placement</div>
-          <div class="bar-track"><div class="bar-fill" style="width:37.6%" title="avg_placement: 0.1043"></div></div>
-          <div class="bar-value">0.104</div>
+          <div class="bar-track"><div class="bar-fill" style="width:40.6%" title="avg_placement: 0.1123"></div></div>
+          <div class="bar-value">0.112</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:22.5%" title="is_artifact: 0.0625"></div></div>
-          <div class="bar-value">0.063</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="rarity">rarity</div>
-          <div class="bar-track"><div class="bar-fill" style="width:14.5%" title="rarity: 0.0401"></div></div>
-          <div class="bar-value">0.040</div>
+          <div class="bar-track"><div class="bar-fill" style="width:18.7%" title="rarity: 0.0518"></div></div>
+          <div class="bar-value">0.052</div>
         </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="is_artifact">is_artifact</div>
+          <div class="bar-track"><div class="bar-fill" style="width:16.7%" title="is_artifact: 0.0464"></div></div>
+          <div class="bar-value">0.046</div>
+        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="total_colored_pips">total_colored_pips</div>
-          <div class="bar-track"><div class="bar-fill" style="width:13.1%" title="total_colored_pips: 0.0363"></div></div>
-          <div class="bar-value">0.036</div>
+          <div class="bar-track"><div class="bar-fill" style="width:15.1%" title="total_colored_pips: 0.0417"></div></div>
+          <div class="bar-value">0.042</div>
         </div>
-        <div class="bar-row">
-          <div class="bar-label" title="cmc">cmc</div>
-          <div class="bar-track"><div class="bar-fill" style="width:3.9%" title="cmc: 0.0107"></div></div>
-          <div class="bar-value">0.011</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_94">keywords_emb_94</div>
-          <div class="bar-track"><div class="bar-fill" style="width:3.5%" title="keywords_emb_94: 0.0097"></div></div>
-          <div class="bar-value">0.010</div>
-        </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="game_changer">game_changer</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.8%" title="game_changer: 0.0077"></div></div>
-          <div class="bar-value">0.008</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.2%" title="game_changer: 0.0170"></div></div>
+          <div class="bar-value">0.017</div>
         </div>
+        
         <div class="bar-row">
           <div class="bar-label" title="avg_level">avg_level</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.8%" title="avg_level: 0.0077"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:4.2%" title="avg_level: 0.0115"></div></div>
+          <div class="bar-value">0.012</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="tags_emb_242">tags_emb_242</div>
+          <div class="bar-track"><div class="bar-fill" style="width:4.1%" title="tags_emb_242: 0.0114"></div></div>
+          <div class="bar-value">0.011</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-zen-fetchland, tutor-land-swamp, tutor-land-island, tutor-land-mountain</span><span class="emb-neg">&#8595; old banish templating, leaves trigger-self, gives pp counters to all, monarch matters</span></div>
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_turn">oracle_tfidf_turn</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3.8%" title="oracle_tfidf_turn: 0.0104"></div></div>
+          <div class="bar-value">0.010</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="cmc">cmc</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3.7%" title="cmc: 0.0103"></div></div>
+          <div class="bar-value">0.010</div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="oracle_tfidf_exile">oracle_tfidf_exile</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3.0%" title="oracle_tfidf_exile: 0.0083"></div></div>
           <div class="bar-value">0.008</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_84">tags_emb_84</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.6%" title="tags_emb_84: 0.0072"></div></div>
-          <div class="bar-value">0.007</div>
+          <div class="bar-label" title="tags_emb_92">tags_emb_92</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="tags_emb_92: 0.0064"></div></div>
+          <div class="bar-value">0.006</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; earthquake, cycle-rav-shockland, shockland, burn player-each</span><span class="emb-neg">&#8595; affinity for artifacts, cycle-mrd-talisman, affinity, synergy-solo-attack</span></div>
         <div class="bar-row">
           <div class="bar-label" title="n_without-body">n_without-body</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.6%" title="n_without-body: 0.0071"></div></div>
-          <div class="bar-value">0.007</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_43">keywords_emb_43</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.5%" title="keywords_emb_43: 0.0068"></div></div>
-          <div class="bar-value">0.007</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_73">keywords_emb_73</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="keywords_emb_73: 0.0065"></div></div>
-          <div class="bar-value">0.007</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_13">keywords_emb_13</div>
-          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="keywords_emb_13: 0.0065"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.3%" title="n_without-body: 0.0063"></div></div>
           <div class="bar-value">0.006</div>
-        </div></div>
+        </div>
+        
+        <div class="bar-row">
+          <div class="bar-label" title="color_U">color_U</div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.2%" title="color_U: 0.0062"></div></div>
+          <div class="bar-value">0.006</div>
+        </div>
+        </div>
       </div>
       <div class="shap-panel">
         <p class="panel-title">SVM</p>
         <div class="bar-chart">
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_7">tags_emb_7</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_7: 0.0099"></div></div>
-          <div class="bar-value">0.010</div>
+          <div class="bar-label" title="tags_emb_30">tags_emb_30</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100.0%" title="tags_emb_30: 0.0016"></div></div>
+          <div class="bar-value">0.002</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; hate-etb, prevent trigger, earthquake, lightning bolt redux</span><span class="emb-neg">&#8595; tutor-cast, tutor-to-exile, tutor-from-opponent, tutor-instant</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_7">keywords_emb_7</div>
-          <div class="bar-track"><div class="bar-fill" style="width:79.9%" title="keywords_emb_7: 0.0079"></div></div>
-          <div class="bar-value">0.008</div>
+          <div class="bar-label" title="tags_emb_59">tags_emb_59</div>
+          <div class="bar-track"><div class="bar-fill" style="width:94.9%" title="tags_emb_59: 0.0015"></div></div>
+          <div class="bar-value">0.002</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; mirrored knight, random discard, french vanilla, counterspell-tuck</span><span class="emb-neg">&#8595; cycle-lea-moxen, moxen, cycle-usg-legendary-land, cycle-mrd-talisman</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="oracle_tfidf_creature">oracle_tfidf_creature</div>
-          <div class="bar-track"><div class="bar-fill" style="width:78.0%" title="oracle_tfidf_creature: 0.0077"></div></div>
-          <div class="bar-value">0.008</div>
+          <div class="bar-label" title="tags_emb_243">tags_emb_243</div>
+          <div class="bar-track"><div class="bar-fill" style="width:75.2%" title="tags_emb_243: 0.0012"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-abu-dual-land, cycle-ice-painland, cycle-painland, cycle-apc-painland</span><span class="emb-neg">&#8595; block trigger, removes indestructible, enchantmentize, cycle-extraplanar-praetor</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_27">keywords_emb_27</div>
-          <div class="bar-track"><div class="bar-fill" style="width:70.4%" title="keywords_emb_27: 0.0070"></div></div>
-          <div class="bar-value">0.007</div>
+          <div class="bar-label" title="tags_emb_71">tags_emb_71</div>
+          <div class="bar-track"><div class="bar-fill" style="width:74.0%" title="tags_emb_71: 0.0012"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; gives pp counters to all, gives player hexproof, earthquake, burn with set&#x27;s mechanic</span><span class="emb-neg">&#8595; cycle-lea-moxen, cycle-horizon-land, cycle-lea-boon, shockland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_269">keywords_emb_269</div>
-          <div class="bar-track"><div class="bar-fill" style="width:61.4%" title="keywords_emb_269: 0.0061"></div></div>
-          <div class="bar-value">0.006</div>
+          <div class="bar-label" title="tags_emb_74">tags_emb_74</div>
+          <div class="bar-track"><div class="bar-fill" style="width:71.6%" title="tags_emb_74: 0.0011"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; regenerates self, block trigger, discard outlet-creature, french vanilla equipment</span><span class="emb-neg">&#8595; cycle-talisman, cycle-mrd-talisman, type addition noble, flicker-slow</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_86">keywords_emb_86</div>
-          <div class="bar-track"><div class="bar-fill" style="width:59.3%" title="keywords_emb_86: 0.0059"></div></div>
-          <div class="bar-value">0.006</div>
+          <div class="bar-label" title="tags_emb_270">tags_emb_270</div>
+          <div class="bar-track"><div class="bar-fill" style="width:69.6%" title="tags_emb_270: 0.0011"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; french vanilla equipment, token versions of cards, cycle-rav-signet, doom blade</span><span class="emb-neg">&#8595; counterspell-bounce, cycle-ema-tutor, flicker-planeswalker, flicker-enchantment</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_159">keywords_emb_159</div>
-          <div class="bar-track"><div class="bar-fill" style="width:58.3%" title="keywords_emb_159: 0.0058"></div></div>
-          <div class="bar-value">0.006</div>
+          <div class="bar-label" title="oracle_tfidf_haste">oracle_tfidf_haste</div>
+          <div class="bar-track"><div class="bar-fill" style="width:67.8%" title="oracle_tfidf_haste: 0.0011"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_324">tags_emb_324</div>
-          <div class="bar-track"><div class="bar-fill" style="width:57.6%" title="tags_emb_324: 0.0057"></div></div>
-          <div class="bar-value">0.006</div>
+          <div class="bar-label" title="tags_emb_335">tags_emb_335</div>
+          <div class="bar-track"><div class="bar-fill" style="width:63.6%" title="tags_emb_335: 0.0010"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-1mv-tutor, tutor-card, cycle-tr-mage, cycle-ema-tutor</span><span class="emb-neg">&#8595; splits on death, cycle-shm-filterland, cycle-hybrid-filterland, cycle-eve-filterland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_68">keywords_emb_68</div>
-          <div class="bar-track"><div class="bar-fill" style="width:56.3%" title="keywords_emb_68: 0.0056"></div></div>
-          <div class="bar-value">0.006</div>
+          <div class="bar-label" title="tags_emb_202">tags_emb_202</div>
+          <div class="bar-track"><div class="bar-fill" style="width:61.5%" title="tags_emb_202: 0.0010"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-shm-filterland, cycle-lea-moxen, shardland, cycle-snc-triland</span><span class="emb-neg">&#8595; leveler, fog, damage prevention-you, birthing pod</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_255">tags_emb_255</div>
-          <div class="bar-track"><div class="bar-fill" style="width:52.8%" title="tags_emb_255: 0.0052"></div></div>
-          <div class="bar-value">0.005</div>
+          <div class="bar-label" title="tags_emb_351">tags_emb_351</div>
+          <div class="bar-track"><div class="bar-fill" style="width:59.7%" title="tags_emb_351: 0.0010"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; flicker, flicker-creature, flicker-enchantment, flicker-planeswalker</span><span class="emb-neg">&#8595; cycle-block-ths-scry-land, cycle-jou-scry-land, cycle-clb-adventurer, cycle-ons-fetchland</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_54">tags_emb_54</div>
-          <div class="bar-track"><div class="bar-fill" style="width:52.5%" title="tags_emb_54: 0.0052"></div></div>
-          <div class="bar-value">0.005</div>
+          <div class="bar-label" title="tags_emb_21">tags_emb_21</div>
+          <div class="bar-track"><div class="bar-fill" style="width:58.3%" title="tags_emb_21: 0.0009"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; stasis, crucible of worlds, cycle-mrd-artifact-land, landfall other</span><span class="emb-neg">&#8595; gives flash, offcolor additional cost, voting, affinity for artifacts</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_187">tags_emb_187</div>
-          <div class="bar-track"><div class="bar-fill" style="width:51.8%" title="tags_emb_187: 0.0051"></div></div>
-          <div class="bar-value">0.005</div>
+          <div class="bar-label" title="tags_emb_1">tags_emb_1</div>
+          <div class="bar-track"><div class="bar-fill" style="width:56.6%" title="tags_emb_1: 0.0009"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; opponent lifegain, hate-lifegain, forced attacker, one-sided fight</span><span class="emb-neg">&#8595; counterspell-sorcery, cycle-bfz-tangoland, cycle-tangoland, counterspell-ability</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="keywords_emb_312">keywords_emb_312</div>
-          <div class="bar-track"><div class="bar-fill" style="width:50.0%" title="keywords_emb_312: 0.0050"></div></div>
-          <div class="bar-value">0.005</div>
+          <div class="bar-label" title="tags_emb_88">tags_emb_88</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55.9%" title="tags_emb_88: 0.0009"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-zen-fetchland, cycle-fetchland, cycle-nonmana-land, cycle-ons-fetchland</span><span class="emb-neg">&#8595; typal-human, gives pp counters to all, typal-choose, flicker-planeswalker</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="is_artifact">is_artifact</div>
-          <div class="bar-track"><div class="bar-fill" style="width:47.5%" title="is_artifact: 0.0047"></div></div>
-          <div class="bar-value">0.005</div>
+          <div class="bar-label" title="tags_emb_205">tags_emb_205</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55.0%" title="tags_emb_205: 0.0009"></div></div>
+          <div class="bar-value">0.001</div>
         </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; cycle-verge, cycle-dsk-verge, artifactfall, cycle-m10-checkland</span><span class="emb-neg">&#8595; cycle-tr-mage, reanimate copy, tutor-sorcery, cycle-lea-moxen</span></div>
         <div class="bar-row">
-          <div class="bar-label" title="tags_emb_343">tags_emb_343</div>
-          <div class="bar-track"><div class="bar-fill" style="width:47.2%" title="tags_emb_343: 0.0047"></div></div>
-          <div class="bar-value">0.005</div>
-        </div></div>
+          <div class="bar-label" title="tags_emb_166">tags_emb_166</div>
+          <div class="bar-track"><div class="bar-fill" style="width:54.8%" title="tags_emb_166: 0.0009"></div></div>
+          <div class="bar-value">0.001</div>
+        </div>
+        <div class="emb-probe"><span class="emb-pos">&#8593; tutor-artifact-equipment, take the initiative, artifactfall, exponential</span><span class="emb-neg">&#8595; lightning bolt redux, hate-graveyard-cast, reanimate-nonland, bombard</span></div></div>
       </div></div>
 
   <h2>Top 15 suspects</h2>
@@ -834,7 +961,7 @@
       
         <tr>
           <td>Eladamri&#x27;s Call</td>
-          <td class="num">99.7%</td>
+          <td class="num">99.6%</td>
           <td class="num">1</td>
           <td class="num">7</td>
           <td class="num">2.4</td>
@@ -842,7 +969,7 @@
         </tr>
         <tr>
           <td>Brutal Cathar</td>
-          <td class="num">25.2%</td>
+          <td class="num">29.1%</td>
           <td class="num">2</td>
           <td class="num">4</td>
           <td class="num">2.2</td>
@@ -850,107 +977,107 @@
         </tr>
         <tr>
           <td>Outland Liberator</td>
-          <td class="num">20.9%</td>
+          <td class="num">23.4%</td>
           <td class="num">3</td>
           <td class="num">5</td>
           <td class="num">5.0</td>
           <td class="num">0%</td>
         </tr>
         <tr>
+          <td>Lorien Revealed</td>
+          <td class="num">16.9%</td>
+          <td class="num">2</td>
+          <td class="num">5</td>
+          <td class="num">3.0</td>
+          <td class="num">60%</td>
+        </tr>
+        <tr>
           <td>Grim Monolith</td>
-          <td class="num">15.2%</td>
+          <td class="num">13.5%</td>
           <td class="num">3</td>
           <td class="num">7</td>
           <td class="num">4.7</td>
           <td class="num">14%</td>
         </tr>
         <tr>
-          <td>Lorien Revealed</td>
-          <td class="num">14.5%</td>
-          <td class="num">2</td>
-          <td class="num">5</td>
-          <td class="num">3.0</td>
-          <td class="num">60%</td>
-        </tr>
-        <tr>
           <td>Wood Elves</td>
-          <td class="num">11.6%</td>
+          <td class="num">10.2%</td>
           <td class="num">2</td>
           <td class="num">5</td>
           <td class="num">2.8</td>
           <td class="num">80%</td>
         </tr>
         <tr>
-          <td>Teferi&#x27;s Protection</td>
-          <td class="num">10.2%</td>
-          <td class="num">1</td>
-          <td class="num">2</td>
-          <td class="num">2.0</td>
-          <td class="num">100%</td>
-        </tr>
-        <tr>
-          <td>Worldly Tutor</td>
-          <td class="num">9.6%</td>
-          <td class="num">1</td>
-          <td class="num">7</td>
-          <td class="num">3.0</td>
-          <td class="num">71%</td>
-        </tr>
-        <tr>
-          <td>Electrolyze</td>
-          <td class="num">9.5%</td>
-          <td class="num">1</td>
-          <td class="num">7</td>
-          <td class="num">3.3</td>
-          <td class="num">57%</td>
-        </tr>
-        <tr>
           <td>Troll of Khazad-dum</td>
-          <td class="num">9.4%</td>
+          <td class="num">9.9%</td>
           <td class="num">2</td>
           <td class="num">5</td>
           <td class="num">3.6</td>
           <td class="num">60%</td>
         </tr>
         <tr>
+          <td>Otawara, Soaring City</td>
+          <td class="num">9.8%</td>
+          <td class="num">1</td>
+          <td class="num">10</td>
+          <td class="num">4.0</td>
+          <td class="num">40%</td>
+        </tr>
+        <tr>
+          <td>Worldly Tutor</td>
+          <td class="num">8.6%</td>
+          <td class="num">1</td>
+          <td class="num">7</td>
+          <td class="num">3.0</td>
+          <td class="num">71%</td>
+        </tr>
+        <tr>
+          <td>Glorybringer</td>
+          <td class="num">8.3%</td>
+          <td class="num">1</td>
+          <td class="num">6</td>
+          <td class="num">2.3</td>
+          <td class="num">100%</td>
+        </tr>
+        <tr>
           <td>Harmonize</td>
-          <td class="num">8.7%</td>
+          <td class="num">8.1%</td>
           <td class="num">2</td>
           <td class="num">5</td>
           <td class="num">2.6</td>
           <td class="num">80%</td>
         </tr>
         <tr>
-          <td>Gamble</td>
-          <td class="num">7.2%</td>
+          <td>Witch Enchanter</td>
+          <td class="num">7.4%</td>
           <td class="num">2</td>
-          <td class="num">2</td>
-          <td class="num">4.0</td>
+          <td class="num">4</td>
+          <td class="num">3.8</td>
           <td class="num">50%</td>
         </tr>
         <tr>
-          <td>Lotus Petal</td>
-          <td class="num">6.6%</td>
-          <td class="num">3</td>
-          <td class="num">5</td>
-          <td class="num">4.4</td>
-          <td class="num">20%</td>
-        </tr>
-        <tr>
-          <td>Mishra&#x27;s Workshop</td>
-          <td class="num">5.7%</td>
-          <td class="num">2</td>
-          <td class="num">5</td>
-          <td class="num">4.4</td>
-          <td class="num">20%</td>
-        </tr>
-        <tr>
           <td>Entomb</td>
-          <td class="num">5.6%</td>
+          <td class="num">7.1%</td>
           <td class="num">2</td>
           <td class="num">5</td>
           <td class="num">3.8</td>
           <td class="num">40%</td>
+        </tr>
+        <tr>
+          <td>Expansion/Explosion</td>
+          <td class="num">6.7%</td>
+          <td class="num">2</td>
+          <td class="num">4</td>
+          <td class="num">2.8</td>
+          <td class="num">75%</td>
+        </tr>
+        <tr>
+          <td>Preordain</td>
+          <td class="num">6.5%</td>
+          <td class="num">0</td>
+          <td class="num">21</td>
+          <td class="num">3.2</td>
+          <td class="num">67%</td>
         </tr>
     </tbody>
   </table>

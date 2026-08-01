@@ -19,11 +19,14 @@ from sklearn.preprocessing import OrdinalEncoder
 _EMBEDDER: Optional[SentenceTransformer] = None
 EMBED_MODEL = "all-MiniLM-L6-v2"
 
-# TF-IDF over oracle text — "english" drops common stopwords (if, the, a, ...)
+# TF-IDF over oracle text - "english" drops common stopwords (if, the, a, ...)
 # before vectorising. Capped vocabulary keeps dimensionality sane relative to
-# the (small) card dataset.
+# the (small) card dataset. Unigrams through trigrams so phrase-level rules
+# text ("target creature" vs "target player") isn't flattened to the same
+# "target" token as everything else.
 TFIDF_MAX_FEATURES = 200
 TFIDF_MIN_DF = 2
+TFIDF_NGRAM_RANGE = (1, 3)
 
 COLORS = ["W", "U", "B", "R", "G"]
 RARITY_ORDER = [["common", "uncommon", "rare", "mythic"]]
@@ -110,13 +113,6 @@ def _rel_counts(row: pd.Series) -> dict:
         val = row.get(col, [])
         counts[f"n_{col}"] = len(val) if isinstance(val, list) else 0
     return counts
-
-
-def _tag_keyword_string(row: pd.Series) -> str:
-    tags = row.get("card_tags", []) or []
-    keywords = row.get("keywords", []) or []
-    parts = list(tags) + list(keywords)
-    return " ".join(str(p) for p in parts)
 
 
 # ---------------------------------------------------------------------------
@@ -228,27 +224,25 @@ def build_feature_matrix(
     else:
         feat_df["rarity"] = rarity_encoder.transform(rarity_values)
 
-    # Sentence-transformer embeddings for card_tags and keywords (separate)
+    # card_tags stay as sentence-transformer embeddings: ~1,560 distinct
+    # values with heavy near-synonym overlap ("removal" / "removal-creature"
+    # / "spot removal"), which is exactly what a dense embedding can partially
+    # capture (and a flat per-tag encoding can't).
+    #
+    # keywords were tried both as embeddings and as multi-hot (see git
+    # history) and dropped entirely: only 4 of the 39 pointed cards have any
+    # keyword at all (3 distinct keywords total among them), so neither
+    # representation gave the model much to learn from on the one class that
+    # matters most, and multi-hot measurably hurt vs. embeddings without
+    # closing that gap.
     tags = df.get("card_tags", pd.Series([[]] * len(df), index=df.index))
-    keywords = df.get("keywords", pd.Series([[]] * len(df), index=df.index))
     tags = tags.apply(lambda x: " ".join(str(p) for p in (x or [])))
-    keywords = keywords.apply(lambda x: " ".join(str(p) for p in (x or [])))
-
     tags_embeddings = _embedder().encode(tags.tolist(), show_progress_bar=True, batch_size=64)
-    keywords_embeddings = _embedder().encode(keywords.tolist(), show_progress_bar=True, batch_size=64)
-    
-    tags_df = pd.DataFrame(
+    embed_df = pd.DataFrame(
         tags_embeddings,
         index=df.index,
         columns=[f"tags_emb_{i}" for i in range(tags_embeddings.shape[1])],
     )
-    keywords_df = pd.DataFrame(
-        keywords_embeddings,
-        index=df.index,
-        columns=[f"keywords_emb_{i}" for i in range(keywords_embeddings.shape[1])],
-    )
-    
-    embed_df = pd.concat([tags_df, keywords_df], axis=1)
 
     # TF-IDF over oracle (rules) text — stopwords pruned before vectorising.
     oracle_text = df.get("oracle_text", pd.Series("", index=df.index))
@@ -258,6 +252,7 @@ def build_feature_matrix(
         stop_words="english",
         max_features=TFIDF_MAX_FEATURES,
         min_df=TFIDF_MIN_DF,
+        ngram_range=TFIDF_NGRAM_RANGE,
     )
     if preprocessors is None:
         tfidf_matrix = tfidf_vectorizer.fit_transform(oracle_text)

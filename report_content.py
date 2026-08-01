@@ -1,4 +1,4 @@
-"""Shared HTML for the model report — used by both:
+"""Shared HTML for the model report - used by both:
   - scripts/build_report.py, which wraps this in a full page for the static
     GitHub Pages report (docs/index.html)
   - streamlit_app.py, which embeds it as the app's landing page
@@ -8,14 +8,18 @@ each caller only supplies its own page-level chrome (title, footer, nav).
 """
 
 import html
+import re
 from typing import Optional
 
 import pandas as pd
 
+from model.embedding_probe import probe_dimension
+
 TOP_N_SUSPECTS = 15
 TOP_N_SHAP = 15
+README_PATH = "README.MD"
 
-# Scoped to .viz-root and its descendants — no `body` selector, since the
+# Scoped to .viz-root and its descendants - no `body` selector, since the
 # Streamlit embedding doesn't control the actual <body> tag.
 REPORT_CSS = """<style>
   .viz-root {
@@ -100,11 +104,17 @@ REPORT_CSS = """<style>
   .viz-root .bar-track { background: var(--series-1-track); border-radius: 4px; height: 16px; }
   .viz-root .bar-fill { background: var(--series-1); height: 16px; border-radius: 0 4px 4px 0; min-width: 4px; }
   .viz-root .bar-value { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .viz-root .emb-probe { font-size: 11px; margin: -2px 0 4px 150px; }
+  .viz-root .emb-probe span { margin-right: 12px; }
+  .viz-root .emb-probe .emb-pos { color: var(--series-1); }
+  .viz-root .emb-probe .emb-neg { color: var(--text-muted); }
   .viz-root table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .viz-root th, .viz-root td { padding: 8px 10px; border-bottom: 1px solid var(--gridline); text-align: left; }
   .viz-root th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
   .viz-root td.num, .viz-root th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .viz-root a { color: var(--series-1); }
+  .viz-root ul.readme-list { margin: 0 0 8px; padding-left: 22px; color: var(--text-secondary); }
+  .viz-root ul.readme-list li { margin: 6px 0; line-height: 1.5; }
 </style>"""
 
 
@@ -112,9 +122,93 @@ def _esc(value) -> str:
     return html.escape(str(value)) if value is not None else ""
 
 
-def _bar_chart_html(series: "Optional[pd.Series]", empty_note: str) -> str:
+def _render_inline_markdown(text: str) -> str:
+    """Escapes text, then converts the handful of inline markers actually
+    used in README.MD's bullets (**bold**, *italic*) to HTML. Not a general
+    markdown renderer - just enough for a dev-log's worth of emphasis."""
+    escaped = _esc(text)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<em>\1</em>", escaped)
+    return escaped
+
+
+def _parse_readme_sections(path: str = README_PATH) -> "list[tuple[str, list[str]]]":
+    """Parses '### Heading' sections followed by '- bullet' lines out of the
+    project README - e.g. its "Why" and "The story so far" dev-log sections -
+    into (heading, [bullet, ...]) pairs. Anything before the first ###
+    section (the title/intro line, already covered by the page's own
+    framing) is skipped, as is non-bullet prose within a section.
+
+    Returns [] if the README is missing or has no ### sections, so callers
+    can render nothing rather than error - this is presentation, not a
+    required data source.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return []
+
+    sections: list[tuple[str, list[str]]] = []
+    heading: Optional[str] = None
+    bullets: list[str] = []
+    for line in text.splitlines():
+        heading_match = re.match(r"^###\s+(.+?)\s*$", line)
+        if heading_match:
+            if heading is not None:
+                sections.append((heading, bullets))
+            heading, bullets = heading_match.group(1), []
+            continue
+        bullet_match = re.match(r"^-\s+(.+?)\s*$", line)
+        if bullet_match and heading is not None:
+            bullets.append(bullet_match.group(1))
+    if heading is not None:
+        sections.append((heading, bullets))
+    return sections
+
+
+def _readme_sections_html(path: str = README_PATH) -> str:
+    parts = []
+    for i, (heading, bullets) in enumerate(_parse_readme_sections(path)):
+        if not bullets:
+            continue
+        no_top_margin = ' style="margin-top:0; border-top:none; padding-top:0;"' if i == 0 else ""
+        items = "".join(f"<li>{_render_inline_markdown(b)}</li>" for b in bullets)
+        parts.append(f"<h2{no_top_margin}>{_esc(heading)}</h2><ul class='readme-list'>{items}</ul>")
+    return "".join(parts)
+
+
+def _embedding_probe_html(feature_name: str, per_card: "Optional[pd.DataFrame]") -> str:
+    """For a tags_emb_* SHAP feature, a compact caption of which real card
+    tags associate with high/low values on that dimension - see
+    model/embedding_probe.py. Empty string for any other feature, or if
+    per_card wasn't supplied."""
+    if per_card is None:
+        return ""
+    result = probe_dimension(per_card, feature_name)
+    if not result:
+        return ""
+
+    spans = []
+    if result["positive"]:
+        tags = ", ".join(_esc(tag) for tag, _delta in result["positive"])
+        spans.append(f'<span class="emb-pos">&#8593; {tags}</span>')
+    if result["negative"]:
+        tags = ", ".join(_esc(tag) for tag, _delta in result["negative"])
+        spans.append(f'<span class="emb-neg">&#8595; {tags}</span>')
+    if not spans:
+        return ""
+    return f'<div class="emb-probe">{"".join(spans)}</div>'
+
+
+def _bar_chart_html(
+    series: "Optional[pd.Series]", empty_note: str, per_card: "Optional[pd.DataFrame]" = None
+) -> str:
     """Renders a horizontal bar chart (mean |SHAP|, single sequential hue)
-    as plain HTML/CSS — no JS required."""
+    as plain HTML/CSS - no JS required. For tags_emb_* features, adds a
+    caption of the real tags that dimension correlates with (see
+    _embedding_probe_html) - those dimensions have no inherent meaning the
+    way a TF-IDF or structured-attribute feature name does."""
     if series is None or series.empty:
         return f'<p class="muted">{_esc(empty_note)}</p>'
 
@@ -128,12 +222,18 @@ def _bar_chart_html(series: "Optional[pd.Series]", empty_note: str) -> str:
           <div class="bar-label" title="{_esc(name)}">{_esc(name)}</div>
           <div class="bar-track"><div class="bar-fill" style="width:{pct:.1f}%" title="{_esc(name)}: {val:.4f}"></div></div>
           <div class="bar-value">{val:.3f}</div>
-        </div>""")
+        </div>
+        {_embedding_probe_html(name, per_card)}""")
     return f'<div class="bar-chart">{"".join(rows)}</div>'
 
 
-def _shap_section_html(shap_by_model: "Optional[dict[str, pd.DataFrame]]", best_name: str, stage_label: str) -> str:
-    """Renders one SHAP panel per candidate model, in a responsive grid —
+def _shap_section_html(
+    shap_by_model: "Optional[dict[str, pd.DataFrame]]",
+    best_name: str,
+    stage_label: str,
+    per_card: "Optional[pd.DataFrame]" = None,
+) -> str:
+    """Renders one SHAP panel per candidate model, in a responsive grid -
     every candidate gets a chart, not just the stage's winner."""
     if not shap_by_model:
         return f'<p class="muted">No SHAP data available for the {_esc(stage_label)} stage.</p>'
@@ -145,7 +245,7 @@ def _shap_section_html(shap_by_model: "Optional[dict[str, pd.DataFrame]]", best_
         panels.append(f"""
       <div class="shap-panel">
         <p class="panel-title">{_esc(name)}{badge}</p>
-        {_bar_chart_html(series, f"No SHAP values for {name}.")}
+        {_bar_chart_html(series, f"No SHAP values for {name}.", per_card=per_card)}
       </div>""")
     return f'<div class="shap-grid">{"".join(panels)}</div>'
 
@@ -190,8 +290,8 @@ def _stat_tile(label: str, value: str, note: str = "", subs: "Optional[list[tupl
 
 
 def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: pd.DataFrame) -> str:
-    """Returns the report body — "What's evaluated" through the top-suspects
-    table — with no page-level title, CSS, or footer, so callers can wrap it
+    """Returns the report body - "What's evaluated" through the top-suspects
+    table - with no page-level title, CSS, or footer, so callers can wrap it
     however suits their context (standalone page vs. embedded landing page).
     """
     n_total = len(per_card)
@@ -199,7 +299,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     n_unpointed = n_total - n_pointed
     # F1 of a naive "flag every card as pointed" classifier: precision =
     # base rate, recall = 1.0, so F1 = 2*base_rate/(1+base_rate), which
-    # simplifies to this — a more meaningful yardstick than an arbitrary
+    # simplifies to this - a more meaningful yardstick than an arbitrary
     # fixed number under this ~40:1,584 imbalance (see AUPRC's note below).
     naive_clf_f1 = (2 * n_pointed / (n_pointed + n_total)) if n_total else 0.0
 
@@ -214,7 +314,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     reg_tuned_params = artifact.get("reg_tuned_params", {})
 
     clf_candidates_html = "".join(
-        f"<li><strong>{_esc(name)}</strong> — mean rank pct {res['mean_rank_pct']:.3f}"
+        f"<li><strong>{_esc(name)}</strong> - mean rank pct {res['mean_rank_pct']:.3f}"
         f"{' (winner)' if name == best_clf_name else ''}"
         + (
             f"<div class='params'>{_esc(_format_params(params))}</div>"
@@ -225,7 +325,7 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
         for name, res in clf_results.items()
     )
     reg_candidates_html = "".join(
-        f"<li><strong>{_esc(name)}</strong> — MAE {res['mae']:.3f}"
+        f"<li><strong>{_esc(name)}</strong> - MAE {res['mae']:.3f}"
         f"{' (winner)' if name == best_reg_name else ''}"
         + (
             f"<div class='params'>{_esc(_format_params(params))}</div>"
@@ -236,14 +336,30 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
         for name, res in reg_results.items()
     )
 
-    shap_clf_html = _shap_section_html(artifact.get("shap_importance_clf"), best_clf_name, "classifier")
-    shap_reg_html = _shap_section_html(artifact.get("shap_importance_reg"), best_reg_name, "regressor")
+    shap_clf_html = _shap_section_html(
+        artifact.get("shap_importance_clf"), best_clf_name, "classifier", per_card=per_card
+    )
+    shap_reg_html = _shap_section_html(
+        artifact.get("shap_importance_reg"), best_reg_name, "regressor", per_card=per_card
+    )
+
+    readme_html = _readme_sections_html()
+    # Whichever section actually renders first gets the top-margin/border
+    # reset (.viz-root h2 otherwise always draws a separator line above
+    # itself) - that's the README sections when present, "What's evaluated"
+    # otherwise.
+    whats_evaluated_h2 = (
+        "<h2>What's evaluated</h2>"
+        if readme_html
+        else '<h2 style="margin-top:0; border-top:none; padding-top:0;">What\'s evaluated</h2>'
+    )
 
     return f"""
+  {readme_html}
   <section class="card">
-    <h2 style="margin-top:0; border-top:none; padding-top:0;">What's evaluated</h2>
+    {whats_evaluated_h2}
     <p>
-      <strong>{n_total:,}</strong> unique cards tracked from CHL tournament decklists —
+      <strong>{n_total:,}</strong> unique cards tracked from CHL tournament decklists -
       <strong>{n_pointed}</strong> currently pointed, <strong>{n_unpointed:,}</strong> unlabeled.
       The model is two-stage: a <strong>classifier</strong> (should this card be pointed at all?)
       trained on all cards, and a <strong>regressor</strong> (how many points?) trained only on
@@ -263,9 +379,9 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
     </div>
   </section>
 
-  <h2>Classifier performance — {_esc(best_clf_name)}</h2>
+  <h2>Classifier performance - {_esc(best_clf_name)}</h2>
   <div class="stat-grid">
-    {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}", "headline metric — robust to the ~40:1,584 class imbalance")}
+    {_stat_tile("AUPRC", f"{clf_eval.get('auprc', 0):.3f}")}
     {_stat_tile(
         "Best F1", f"{clf_eval.get('best_f1', 0):.3f}", f"at threshold {clf_eval.get('best_f1_threshold', 0):.2f}",
         subs=[
@@ -274,22 +390,22 @@ def render_report_sections(artifact: dict, predictions: pd.DataFrame, per_card: 
             ("Recall @ 0.5", f"{clf_eval.get('recall_at_0.5', 0):.3f}"),
         ],
     )}
-    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}", "always flagging every card as pointed")}
-    {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only — reads high under this imbalance")}
+    {_stat_tile("Naive baseline F1", f"{naive_clf_f1:.3f}")}
+    {_stat_tile("AUROC", f"{clf_eval.get('auroc', 0):.3f}", "reference only - data too imbalanced for this to be meaningful")}
   </div>
   <p class="muted">{_esc(clf_eval.get("note", ""))}</p>
 
-  <h2>Regressor performance — {_esc(best_reg_name)}</h2>
+  <h2>Regressor performance - {_esc(best_reg_name)}</h2>
   <div class="stat-grid">
-    {_stat_tile("MAE (points)", f"{reg_mae:.3f}" if reg_mae is not None else "—")}
-    {_stat_tile("Naive baseline MAE", f"{naive_mae:.3f}" if naive_mae is not None else "—", "always predicting the mode")}
+    {_stat_tile("MAE (points)", f"{reg_mae:.3f}" if reg_mae is not None else "-")}
+    {_stat_tile("Naive baseline MAE", f"{naive_mae:.3f}" if naive_mae is not None else "-")}
   </div>
 
-  <h2>Feature importance (mean |SHAP|) — classifier</h2>
-  <p class="muted">Every candidate model, not just the winner. SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample — treat those as directional, not exact.</p>
+  <h2>Feature importance (mean |SHAP|) - classifier</h2>
+  <p class="muted">SVM/OrdinalRidge have no closed-form SHAP, so they're computed via KernelExplainer on a subsample (treat those as directional only). For tags_emb_* features, &#8593;/&#8595; show which real card tags average highest/lowest on that dimension</p>
   {shap_clf_html}
 
-  <h2>Feature importance (mean |SHAP|) — regressor</h2>
+  <h2>Feature importance (mean |SHAP|) - regressor</h2>
   {shap_reg_html}
 
   <h2>Top {TOP_N_SUSPECTS} suspects</h2>

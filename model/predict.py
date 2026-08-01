@@ -206,7 +206,6 @@ def _card_row_from_scryfall(card: dict) -> dict:
         "power":           card.get("power", face.get("power")),
         "toughness":       card.get("toughness", face.get("toughness")),
         "color_identity":  card.get("color_identity", []),
-        "keywords":        card.get("keywords", []),
         "game_changer":    card.get("game_changer", False),
         "rarity":          card.get("rarity"),
         "edhrec_rank":     card.get("edhrec_rank"),
@@ -256,6 +255,22 @@ def score_card(
             row = match.iloc[0]
             has_history = (row.get("appearances") or 0) > 0
 
+    scryfall_card = None
+    if row is None and card_pool is not None:
+        # Exact match failed - could just be punctuation the typed name is
+        # missing (e.g. "Forth Eorlingas" vs the card's actual "Forth
+        # Eorlingas!"). Resolve via Scryfall's fuzzy matcher first and
+        # re-check the pool by the canonical name before treating this as a
+        # never-played card - otherwise an already-pointed card with any
+        # punctuation quirk silently gets live-scored instead of flagged.
+        scryfall_card = _fetch_scryfall_card(card_name)
+        if scryfall_card is not None:
+            canonical_name = scryfall_card.get("name", card_name)
+            match = card_pool[card_pool["card_name"].str.lower() == canonical_name.lower()]
+            if not match.empty:
+                row = match.iloc[0]
+                has_history = (row.get("appearances") or 0) > 0
+
     if row is not None and pd.notna(row.get("points")) and row.get("points", 0) > 0:
         return {
             "card_name":              row["card_name"],
@@ -272,7 +287,7 @@ def score_card(
         row_df = card_pool.loc[[row.name]]
         display_name = row["card_name"]
     else:
-        card = _fetch_scryfall_card(card_name)
+        card = scryfall_card if scryfall_card is not None else _fetch_scryfall_card(card_name)
         if card is None:
             return None
         record = _card_row_from_scryfall(card)
