@@ -115,6 +115,7 @@ REPORT_CSS = """<style>
   .viz-root a { color: var(--series-1); }
   .viz-root ul.readme-list { margin: 0 0 8px; padding-left: 22px; color: var(--text-secondary); }
   .viz-root ul.readme-list li { margin: 6px 0; line-height: 1.5; }
+  .viz-root p.readme-p { color: var(--text-secondary); margin: 0 0 12px; }
 </style>"""
 
 
@@ -132,12 +133,13 @@ def _render_inline_markdown(text: str) -> str:
     return escaped
 
 
-def _parse_readme_sections(path: str = README_PATH) -> "list[tuple[str, list[str]]]":
-    """Parses '### Heading' sections followed by '- bullet' lines out of the
-    project README - e.g. its "Why" and "The story so far" dev-log sections -
-    into (heading, [bullet, ...]) pairs. Anything before the first ###
+def _parse_readme_sections(path: str = README_PATH) -> "list[tuple[str, list[tuple[str, str]]]]":
+    """Parses '### Heading' sections out of the project README - e.g. its
+    "The problem" and "Notes" dev-log sections - into (heading, [item, ...])
+    pairs, where each item is ("p", text) for a prose line or ("li", text)
+    for a '- bullet' line, in source order. Anything before the first ###
     section (the title/intro line, already covered by the page's own
-    framing) is skipped, as is non-bullet prose within a section.
+    framing) is skipped.
 
     Returns [] if the README is missing or has no ### sections, so callers
     can render nothing rather than error - this is presentation, not a
@@ -149,32 +151,54 @@ def _parse_readme_sections(path: str = README_PATH) -> "list[tuple[str, list[str
     except OSError:
         return []
 
-    sections: list[tuple[str, list[str]]] = []
+    sections: list[tuple[str, list[tuple[str, str]]]] = []
     heading: Optional[str] = None
-    bullets: list[str] = []
+    items: list[tuple[str, str]] = []
     for line in text.splitlines():
         heading_match = re.match(r"^###\s+(.+?)\s*$", line)
         if heading_match:
             if heading is not None:
-                sections.append((heading, bullets))
-            heading, bullets = heading_match.group(1), []
+                sections.append((heading, items))
+            heading, items = heading_match.group(1), []
+            continue
+        if heading is None or not line.strip():
             continue
         bullet_match = re.match(r"^-\s+(.+?)\s*$", line)
-        if bullet_match and heading is not None:
-            bullets.append(bullet_match.group(1))
+        if bullet_match:
+            items.append(("li", bullet_match.group(1)))
+        else:
+            items.append(("p", line.strip()))
     if heading is not None:
-        sections.append((heading, bullets))
+        sections.append((heading, items))
     return sections
 
 
 def _readme_sections_html(path: str = README_PATH) -> str:
     parts = []
-    for i, (heading, bullets) in enumerate(_parse_readme_sections(path)):
-        if not bullets:
+    for i, (heading, items) in enumerate(_parse_readme_sections(path)):
+        if not items:
             continue
         no_top_margin = ' style="margin-top:0; border-top:none; padding-top:0;"' if i == 0 else ""
-        items = "".join(f"<li>{_render_inline_markdown(b)}</li>" for b in bullets)
-        parts.append(f"<h2{no_top_margin}>{_esc(heading)}</h2><ul class='readme-list'>{items}</ul>")
+        body_parts = []
+        bullets: list[str] = []
+
+        def _flush_bullets():
+            if bullets:
+                body_parts.append(
+                    "<ul class='readme-list'>"
+                    + "".join(f"<li>{_render_inline_markdown(b)}</li>" for b in bullets)
+                    + "</ul>"
+                )
+                bullets.clear()
+
+        for kind, text in items:
+            if kind == "li":
+                bullets.append(text)
+            else:
+                _flush_bullets()
+                body_parts.append(f"<p class='readme-p'>{_render_inline_markdown(text)}</p>")
+        _flush_bullets()
+        parts.append(f"<h2{no_top_margin}>{_esc(heading)}</h2>{''.join(body_parts)}")
     return "".join(parts)
 
 

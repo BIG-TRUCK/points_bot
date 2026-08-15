@@ -26,3 +26,4 @@ An active metagame contains thousands of cards, the majority of which do not war
 - Actually, it's kind of a pointless feature given only 3 of the pointed cards have it
 - Why am I not getting bigrams and trigrams when I do tf-idf???? idiot
 - At some point I'd like to remove the tournament result features and see what happens. It would be nice to be able to flag "sleeper" cards that could be useful in the format but have yet to appear in any tournaments.
+- I should try encoding some of the tags which show up as high-scoring on the embedding dimensions that show up in the feature importance charts.
