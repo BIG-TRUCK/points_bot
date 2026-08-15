@@ -22,3 +22,9 @@ __pycache__/
 
 # Streamlit Cloud needs this at repo root to install dependencies
 !/requirements.txt
+!/requirements-dev.txt
+
+# Local MLflow experiment-tracking store (model/train.py) — machine-local,
+# not meant to be shared via git.
+/mlruns/
+/mlflow.db

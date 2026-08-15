@@ -1,0 +1,7 @@
+# Extra deps for local development only (model/train.py's experiment
+# tracking) — not needed to run the deployed Streamlit app, so kept out of
+# requirements.txt to avoid bloating that install.
+#
+#     pip install -r requirements.txt -r requirements-dev.txt
+
+mlflow==3.15.1
